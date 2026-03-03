@@ -1,34 +1,91 @@
-name: "Submit to Web Store"
+name: Build and Release
+
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
       - name: Cache pnpm modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-
-      - uses: pnpm/action-setup@v2.2.4
+
+      - uses: pnpm/action-setup@v4
         with:
           version: latest
           run_install: true
-      - name: Use Node.js 16.x
-        uses: actions/setup-node@v3.4.1
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
         with:
-          node-version: 16.x
+          node-version: 20.x
           cache: "pnpm"
+
       - name: Build the extension
         run: pnpm build
+
       - name: Package the extension into a zip artifact
         run: pnpm package
-      - name: Browser Platform Publish
-        uses: PlasmoHQ/bpp@v3
+
+      - name: Get version
+        id: version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Rename package
+        run: mv build/chrome-mv3-prod.zip build/easy-copilot-release-${{ steps.version.outputs.VERSION }}.zip
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
         with:
-          keys: ${{ secrets.SUBMIT_KEYS }}
-          artifact: build/chrome-mv3-prod.zip
+          name: easy-copilot-release-${{ steps.version.outputs.VERSION }}
+          path: build/easy-copilot-release-${{ steps.version.outputs.VERSION }}.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: easy-copilot-release-${{ steps.version.outputs.VERSION }}
+          path: ./release
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.VERSION }}
+          name: Release v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## Easy Copilot v${{ steps.version.outputs.VERSION }}
+            
+            ### 安装方式
+            1. 下载 `easy-copilot-release-${{ steps.version.outputs.VERSION }}.zip`
+            2. 解压缩文件
+            3. 打开 Chrome 浏览器，进入 `chrome://extensions/`
+            4. 开启「开发者模式」
+            5. 点击「加载已解压的扩展程序」选择解压后的文件夹
+            
+            ### 功能
+            AI 对话导航助手，快速回溯对话中的提问位置。
+          files: |
+            release/easy-copilot-release-${{ steps.version.outputs.VERSION }}.zip
+          draft: false
+          prerelease: false
