@@ -168,8 +168,6 @@ function IndexPopup() {
     }
     e.target.value = ""
   }
-  console.log("configs", configs);
-  console.log("currentDomain", currentDomain);
 
   const matchedConfig = configs.find(
     (c) => currentDomain.includes(c.domain) && c.enabled
