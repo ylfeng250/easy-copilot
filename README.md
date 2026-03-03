@@ -1,33 +1,74 @@
-This is a [Plasmo extension](https://docs.plasmo.com/) project bootstrapped with [`plasmo init`](https://www.npmjs.com/package/plasmo).
+## 1. 项目背景
 
-## Getting Started
+在使用 ChatGPT、Gemini、Claude 等长对话 AI 平台时，随着上下文增加，页面滚动长度极大。用户往往难以快速回溯到特定的提问位置。本项目旨在开发一个浏览器插件或脚本，通过 DOM 选择器自动提取用户提问，生成侧边栏导航目录。
 
-First, run the development server:
+## 2. 核心功能需求
 
-```bash
-pnpm dev
-# or
-npm run dev
+### 2.1 智能内容提取
+
+* **多平台兼容**：预设主流平台（ChatGPT, Gemini, Claude, DeepSeek）的默认 CSS 选择器。
+* **动态监听**：使用 `MutationObserver` 监听 DOM 变化，当 AI 生成新回复或用户发送新消息时，自动更新索引列表。
+* **内容清洗**：提取文本前 N 个字符作为标题，并去除多余的空格或代码块标签。
+
+### 2.2 锚点导航系统
+
+* **目录展示**：在页面侧边或悬浮窗展示用户提问列表。
+* **平滑滚动**：点击目录项后，调用 `element.scrollIntoView({ behavior: 'smooth' })` 定位到目标 DOM。
+* **视觉反馈**：跳转后对目标元素进行短暂的高亮处理（如闪烁或边框强化）。
+
+### 2.3 自定义配置与持久化
+
+* **自定义选择器**：支持用户手动输入特定的 `querySelectorAll` 表达式，以适配未预设的本地 AI 界面或小众平台。
+* **存储机制**：使用 `chrome.storage.local` 或 `localStorage` 保存用户针对不同域名的自定义配置。
+* **导入/导出**：
+* **导出**：将所有自定义选择器和屏蔽规则导出为 `.json` 文件。
+* **导入**：支持上传 `.json` 配置文件，合并或覆盖当前设置。
+
+
+
+---
+
+## 3. 技术逻辑架构
+
+### 3.1 核心配置模型
+
+配置文件应遵循如下 JSON 结构：
+
+```json
+{
+  "configs": [
+    {
+      "domain": "chatgpt.com",
+      "selector": "div[data-message-author-role='user']",
+      "enabled": true
+    },
+    {
+      "domain": "gemini.google.com",
+      "selector": ".user-query-content",
+      "enabled": true
+    }
+  ]
+}
+
 ```
 
-Open your browser and load the appropriate development build. For example, if you are developing for the chrome browser, using manifest v3, use: `build/chrome-mv3-dev`.
+---
 
-You can start editing the popup by modifying `popup.tsx`. It should auto-update as you make changes. To add an options page, simply add a `options.tsx` file to the root of the project, with a react component default exported. Likewise to add a content page, add a `content.ts` file to the root of the project, importing some module and do some logic, then reload the extension on your browser.
+## 4. 界面交互原型 (UI/UX)
 
-For further guidance, [visit our Documentation](https://docs.plasmo.com/)
+* **侧边栏 (Drawer)**：默认隐藏，通过悬浮按钮或快捷键触发。
+* **搜索过滤**：在目录上方提供搜索框，支持关键词实时过滤提问列表。
+* **设置面板**：
+* 当前域名识别：自动显示当前 URL 的匹配状态。
+* 输入框：编辑 CSS 选择器。
+* 按钮组：【测试选择器】、【保存并刷新】、【导出配置】。
 
-## Making production build
 
-Run the following:
 
-```bash
-pnpm build
-# or
-npm run build
-```
+---
 
-This should create a production bundle for your extension, ready to be zipped and published to the stores.
+## 5. 非功能性需求
 
-## Submit to the webstores
-
-The easiest way to deploy your Plasmo extension is to use the built-in [bpp](https://bpp.browser.market) GitHub action. Prior to using this action however, make sure to build your extension and upload the first version to the store to establish the basic credentials. Then, simply follow [this setup instruction](https://docs.plasmo.com/framework/workflows/submit) and you should be on your way for automated submission!
+* **性能**：DOM 扫描需防抖处理（Debounce），避免在长文档中引起页面卡顿。
+* **隐私**：仅在本地处理 DOM 内容，不得将用户的对话内容上传至第三方服务器。
+* **兼容性**：需适配主流 Chromium 内核浏览器及 Firefox。

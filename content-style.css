@@ -1,0 +1,21 @@
+.ec-trigger:hover {
+  filter: brightness(1.1);
+  transform: translateY(-50%) scale(1.05) !important;
+}
+
+.ec-sidebar ::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ec-sidebar ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ec-sidebar ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+.ec-sidebar ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

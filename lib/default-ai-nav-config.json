@@ -1,0 +1,39 @@
+{
+    "configs": [
+      {
+        "domain": "chatgpt.com",
+        "selector": "div[data-message-author-role='user']",
+        "enabled": true
+      },
+      {
+        "domain": "gemini.google.com",
+        "selector": "user-query",
+        "enabled": true
+      },
+      {
+        "domain": "claude.ai",
+        "selector": "[data-is-streaming] .font-user-message, div.font-user-message",
+        "enabled": true
+      },
+      {
+        "domain": "chat.deepseek.com",
+        "selector": ".fbb737a4",
+        "enabled": true
+      },
+      {
+        "domain": "yuanbao.tencent.com",
+        "selector": ".agent-chat__conv--human",
+        "enabled": true
+      },
+      {
+        "domain": "www.kimi.com",
+        "selector": ".segment-user",
+        "enabled": true
+      },
+      {
+        "domain": "chat.qwen.ai",
+        "selector": ".chat-user-message",
+        "enabled": true
+      }
+    ]
+  }

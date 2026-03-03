@@ -1,8 +1,8 @@
 {
   "name": "easy-copilot",
-  "displayName": "Easy copilot",
+  "displayName": "Easy Copilot",
   "version": "0.0.1",
-  "description": "A basic Plasmo extension.",
+  "description": "AI 对话导航助手 - 快速回溯对话中的提问位置",
   "author": "ylfeng250",
   "scripts": {
     "dev": "plasmo dev",
@@ -10,6 +10,7 @@
     "package": "plasmo package"
   },
   "dependencies": {
+    "@plasmohq/storage": "1.11.0",
     "plasmo": "0.90.5",
     "react": "18.2.0",
     "react-dom": "18.2.0"
@@ -26,6 +27,11 @@
   "manifest": {
     "host_permissions": [
       "https://*/*"
+    ],
+    "permissions": [
+      "activeTab",
+      "storage",
+      "scripting"
     ]
   }
 }
