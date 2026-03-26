@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Easy Copilot - AI 对话导航助手</title>
+  <meta name="description" content="智能索引 AI 对话中的所有提问，一键快速跳转，告别无尽滚动">
+  <meta name="keywords" content="AI, Copilot, Chrome 扩展，对话导航，ChatGPT, Claude, Gemini">
+  <meta name="author" content="ylfeng250">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Easy Copilot - AI 对话导航助手">
+  <meta property="og:description" content="智能索引 AI 对话中的所有提问，一键快速跳转，告别无尽滚动">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Easy Copilot - AI 对话导航助手">
+  <meta name="twitter:description" content="智能索引 AI 对话中的所有提问，一键快速跳转，告别无尽滚动">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="../assets/icon.png">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            },
+            dark: {
+              900: '#0f0f0f',
+              800: '#1a1a1a',
+              700: '#2a2a2a',
+              600: '#3a3a3a',
+            }
+          },
+          animation: {
+            'float': 'float 6s ease-in-out infinite',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'gradient': 'gradient 8s linear infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-20px)' },
+            },
+            gradient: {
+              '0%, 100%': { backgroundPosition: '0% 50%' },
+              '50%': { backgroundPosition: '100% 50%' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .gradient-bg {
+      background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+      background-size: 400% 400%;
+      animation: gradient 15s ease infinite;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .dark .glass {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-8px);
+    }
+
+    .platform-card:hover {
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body class="font-sans antialiased">
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 glass">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center space-x-3">
+          <img src="../assets/icon.png" alt="Logo" class="w-8 h-8">
+          <span class="text-xl font-bold">Easy Copilot</span>
+        </div>
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="#features" class="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition">功能</a>
+          <a href="#platforms" class="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition">平台</a>
+          <a href="#install" class="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition">安装</a>
+          <a href="#guide" class="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition">指南</a>
+        </div>
+        <div class="flex items-center space-x-4">
+          <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+            <i class="fas fa-moon dark:hidden"></i>
+            <i class="fas fa-sun hidden dark:block"></i>
+          </button>
+          <a href="https://github.com/ylfeng250/easy-copilot" target="_blank" class="hidden sm:flex items-center space-x-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition">
+            <i class="fab fa-github"></i>
+            <span>GitHub</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative min-h-screen flex items-center justify-center overflow-hidden gradient-bg">
+    <div class="absolute inset-0 bg-black/20"></div>
+    <div class="relative z-10 text-center px-4 py-20">
+      <div class="animate-float mb-8">
+        <img src="../assets/icon.png" alt="Easy Copilot Logo" class="w-24 h-24 mx-auto rounded-2xl shadow-2xl">
+      </div>
+      <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-6">
+        Easy Copilot
+      </h1>
+      <p class="text-xl md:text-2xl text-white/90 mb-4 max-w-3xl mx-auto">
+        AI 对话导航助手
+      </p>
+      <p class="text-lg md:text-xl text-white/80 mb-8 max-w-2xl mx-auto">
+        智能索引 AI 对话中的所有提问，一键快速跳转，告别无尽滚动
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="#install" class="px-8 py-4 bg-white text-primary-600 font-semibold rounded-xl hover:bg-gray-100 transition shadow-lg">
+          <i class="fas fa-download mr-2"></i>
+          立即安装
+        </a>
+        <a href="https://github.com/ylfeng250/easy-copilot" target="_blank" class="px-8 py-4 glass text-white font-semibold rounded-xl hover:bg-white/20 transition">
+          <i class="fab fa-github mr-2"></i>
+          查看源码
+        </a>
+      </div>
+      <div class="mt-12 flex items-center justify-center space-x-8 text-white/70">
+        <div class="flex items-center space-x-2">
+          <i class="fas fa-star"></i>
+          <span>完全免费</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <i class="fas fa-shield-alt"></i>
+          <span>隐私优先</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <i class="fas fa-code"></i>
+          <span>开源透明</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Animated Background Elements -->
+    <div class="absolute top-1/4 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-pulse-slow"></div>
+    <div class="absolute bottom-1/4 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse-slow" style="animation-delay: 2s;"></div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="py-20 bg-gray-50 dark:bg-dark-900">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold mb-4">
+          <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-purple-600">
+            核心功能
+          </span>
+        </h2>
+        <p class="text-xl text-gray-600 dark:text-gray-400">
+          专为提升 AI 对话效率而设计
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Feature 1 -->
+        <div class="feature-card bg-white dark:bg-dark-800 p-8 rounded-2xl shadow-lg transition-all duration-300">
+          <div class="w-14 h-14 bg-primary-100 dark:bg-primary-900 rounded-xl flex items-center justify-center mb-6">
+            <i class="fas fa-brain text-2xl text-primary-600 dark:text-primary-400"></i>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">智能内容提取</h3>
+          <p class="text-gray-600 dark:text-gray-400">
+            自动检测并索引多个 AI 平台上的用户提问，实时 DOM 监听，智能过滤干扰内容
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card bg-white dark:bg-dark-800 p-8 rounded-2xl shadow-lg transition-all duration-300">
+          <div class="w-14 h-14 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center mb-6">
+            <i class="fas fa-compass text-2xl text-purple-600 dark:text-purple-400"></i>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">侧边栏导航</h3>
+          <p class="text-gray-600 dark:text-gray-400">
+            简洁优雅的侧边栏，一键跳转至任意提问，平滑滚动 + 高亮反馈
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card bg-white dark:bg-dark-800 p-8 rounded-2xl shadow-lg transition-all duration-300">
+          <div class="w-14 h-14 bg-green-100 dark:bg-green-900 rounded-xl flex items-center justify-center mb-6">
+            <i class="fas fa-search text-2xl text-green-600 dark:text-green-400"></i>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">即时搜索</h3>
+          <p class="text-gray-600 dark:text-gray-400">
+            支持关键词实时过滤，快速定位特定提问，显示当前检测到的提问总数
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-card bg-white dark:bg-dark-800 p-8 rounded-2xl shadow-lg transition-all duration-300">
+          <div class="w-14 h-14 bg-orange-100 dark:bg-orange-900 rounded-xl flex items-center justify-center mb-6">
+            <i class="fas fa-cog text-2xl text-orange-600 dark:text-orange-400"></i>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">灵活配置</h3>
+          <p class="text-gray-600 dark:text-gray-400">
+            支持自定义 CSS 选择器，配置导入/导出，可单独启用/禁用每个平台的规则
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Platforms Section -->
+  <section id="platforms" class="py-20 bg-white dark:bg-dark-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold mb-4">
+          <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-purple-600">
+            支持平台
+          </span>
+        </h2>
+        <p class="text-xl text-gray-600 dark:text-gray-400">
+          预置主流 AI 平台支持，开箱即用
+        </p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
+          <div class="text-4xl mb-4">🤖</div>
+          <h3 class="font-semibold text-lg">ChatGPT</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">chatgpt.com</p>
+        </div>
+
+        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
+          <div class="text-4xl mb-4">✨</div>
+          <h3 class="font-semibold text-lg">Claude</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">claude.ai</p>
+        </div>
+
+        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
+          <div class="text-4xl mb-4">🌟</div>
+          <h3 class="font-semibold text-lg">Gemini</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">gemini.google.com</p>
+        </div>
+
+        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
+          <div class="text-4xl mb-4">🐳</div>
+          <h3 class="font-semibold text-lg">DeepSeek</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">chat.deepseek.com</p>
+        </div>
+
+        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
+          <div class="text-4xl mb-4">🐵</div>
+          <h3 class="font-semibold text-lg">Kimi</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">kimi.com</p>
+        </div>
+
+        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
+          <div class="text-4xl mb-4">💬</div>
+          <h3 class="font-semibold text-lg">通义千问</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">chat.qwen.ai</p>
+        </div>
+
+        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
+          <div class="text-4xl mb-4">💎</div>
+          <h3 class="font-semibold text-lg">腾讯元宝</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">yuanbao.tencent.com</p>
+        </div>
+
+        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
+          <div class="text-4xl mb-4">🔧</div>
+          <h3 class="font-semibold text-lg">更多平台</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">支持自定义配置</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install Section -->
+  <section id="install" class="py-20 bg-gray-50 dark:bg-dark-900">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold mb-4">
+          <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-purple-600">
+            安装指南
+          </span>
+        </h2>
+        <p class="text-xl text-gray-600 dark:text-gray-400">
+          从源码构建并加载扩展
+        </p>
+      </div>
+
+      <div class="space-y-6">
+        <!-- Step 1 -->
+        <div class="bg-white dark:bg-dark-800 rounded-2xl p-8 shadow-lg">
+          <div class="flex items-start space-x-4">
+            <div class="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">1</div>
+            <div class="flex-1">
+              <h3 class="text-xl font-semibold mb-3">克隆仓库</h3>
+              <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                <code class="text-green-400 text-sm">
+                  git clone https://github.com/ylfeng250/easy-copilot.git<br>
+                  cd easy-copilot
+                </code>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="bg-white dark:bg-dark-800 rounded-2xl p-8 shadow-lg">
+          <div class="flex items-start space-x-4">
+            <div class="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">2</div>
+            <div class="flex-1">
+              <h3 class="text-xl font-semibold mb-3">安装依赖</h3>
+              <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                <code class="text-green-400 text-sm">pnpm install</code>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="bg-white dark:bg-dark-800 rounded-2xl p-8 shadow-lg">
+          <div class="flex items-start space-x-4">
+            <div class="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">3</div>
+            <div class="flex-1">
+              <h3 class="text-xl font-semibold mb-3">构建项目</h3>
+              <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                <code class="text-green-400 text-sm">pnpm build</code>
+              </div>
+              <p class="mt-3 text-gray-600 dark:text-gray-400 text-sm">
+                开发模式下可使用 <code class="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-sm">pnpm dev</code>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="bg-white dark:bg-dark-800 rounded-2xl p-8 shadow-lg">
+          <div class="flex items-start space-x-4">
+            <div class="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">4</div>
+            <div class="flex-1">
+              <h3 class="text-xl font-semibold mb-3">加载扩展</h3>
+              <ol class="space-y-2 text-gray-600 dark:text-gray-400">
+                <li>1. 打开 Chrome 浏览器，访问 <code class="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">chrome://extensions/</code></li>
+                <li>2. 开启右上角「开发者模式」</li>
+                <li>3. 点击「加载已解压的扩展程序」</li>
+                <li>4. 选择 <code class="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">build/chrome-mv3-prod</code> 目录</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Usage Guide Section -->
+  <section id="guide" class="py-20 bg-white dark:bg-dark-800">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold mb-4">
+          <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-purple-600">
+            使用指南
+          </span>
+        </h2>
+        <p class="text-xl text-gray-600 dark:text-gray-400">
+          快速上手，提升对话效率
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="bg-gray-50 dark:bg-dark-700 rounded-2xl p-8">
+          <div class="w-12 h-12 bg-primary-100 dark:bg-primary-900 rounded-xl flex items-center justify-center mb-4">
+            <i class="fas fa-mouse-pointer text-xl text-primary-600 dark:text-primary-400"></i>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">基本使用</h3>
+          <ol class="space-y-2 text-gray-600 dark:text-gray-400">
+            <li>• 访问支持的 AI 平台（如 ChatGPT、Claude 等）</li>
+            <li>• 页面右侧会出现一个触发按钮</li>
+            <li>• 点击按钮展开侧边栏，查看所有提问</li>
+            <li>• 点击任意提问项，自动滚动到对应位置</li>
+          </ol>
+        </div>
+
+        <div class="bg-gray-50 dark:bg-dark-700 rounded-2xl p-8">
+          <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center mb-4">
+            <i class="fas fa-sliders-h text-xl text-purple-600 dark:text-purple-400"></i>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">配置管理</h3>
+          <ol class="space-y-2 text-gray-600 dark:text-gray-400">
+            <li>• 点击浏览器工具栏中的 Easy Copilot 图标</li>
+            <li>• 为新的 AI 平台添加自定义选择器</li>
+            <li>• 在保存前测试选择器是否有效</li>
+            <li>• 导入/导出配置进行备份或迁移</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-20 gradient-bg">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h2 class="text-4xl font-bold text-white mb-6">准备好提升 AI 对话效率了吗？</h2>
+      <p class="text-xl text-white/80 mb-8">
+        立即安装 Easy Copilot，告别无尽滚动，一键定位任意提问
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="#install" class="px-8 py-4 bg-white text-primary-600 font-semibold rounded-xl hover:bg-gray-100 transition shadow-lg">
+          <i class="fas fa-download mr-2"></i>
+          开始安装
+        </a>
+        <a href="https://github.com/ylfeng250/easy-copilot" target="_blank" class="px-8 py-4 glass text-white font-semibold rounded-xl hover:bg-white/20 transition">
+          <i class="fab fa-github mr-2"></i>
+          访问 GitHub
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-12 bg-gray-900 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row items-center justify-between">
+        <div class="flex items-center space-x-3 mb-4 md:mb-0">
+          <img src="../assets/icon.png" alt="Logo" class="w-8 h-8">
+          <span class="text-lg font-semibold">Easy Copilot</span>
+        </div>
+        <div class="flex items-center space-x-6">
+          <a href="https://github.com/ylfeng250/easy-copilot" target="_blank" class="hover:text-primary-400 transition">
+            <i class="fab fa-github text-xl"></i>
+          </a>
+          <a href="https://github.com/ylfeng250/easy-copilot/issues" target="_blank" class="hover:text-primary-400 transition">
+            <i class="fas fa-bug text-xl"></i>
+          </a>
+        </div>
+      </div>
+      <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+        <p>MIT License © 2026 ylfeng250</p>
+        <p class="mt-2 text-sm">Built with ❤️ for better AI conversations</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    // Theme Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+
+    // Check for saved theme preference or default to dark mode
+    const currentTheme = localStorage.getItem('theme') || 'dark';
+    if (currentTheme === 'dark') {
+      html.classList.add('dark');
+    }
+
+    themeToggle.addEventListener('click', () => {
+      html.classList.toggle('dark');
+      const theme = html.classList.contains('dark') ? 'dark' : 'light';
+      localStorage.setItem('theme', theme);
+    });
+
+    // Smooth scroll for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
