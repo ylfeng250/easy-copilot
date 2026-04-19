@@ -30,7 +30,7 @@ function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): T {
   }) as unknown as T
 }
 
-function extractText(el: Element, maxLen = 80): string {
+function extractText(el: Element, maxLen = 200): string {
   const clone = el.cloneNode(true) as HTMLElement
   clone.querySelectorAll("pre, code, svg, img").forEach((n) => n.remove())
   const raw = (clone.textContent || "").replace(/\s+/g, " ").trim()
@@ -39,12 +39,16 @@ function extractText(el: Element, maxLen = 80): string {
 
 function Sidebar() {
   const [items, setItems] = useState<NavItem[]>([])
-  const [visible, setVisible] = useState(false)
-  const [search, setSearch] = useState("")
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [hoveredIndex, setHoveredIndex] = useState<number>(0)
   const [selectorReady, setSelectorReady] = useState(false)
+  const [showCard, setShowCard] = useState(false)
+  const [cardPos, setCardPos] = useState<number>(0)
   const selectorRef = useRef("")
   const observerRef = useRef<MutationObserver | null>(null)
+  const cardTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const t = tokens
 
   const scanDOM = useCallback(() => {
@@ -117,302 +121,198 @@ function Sidebar() {
     item.element.scrollIntoView({ behavior: "smooth", block: "center" })
     const el = item.element as HTMLElement
     el.style.transition = `box-shadow ${t.transition.normal}`
-    el.style.boxShadow = `0 0 0 3px ${t.colors.highlightBorder}`
+    el.style.boxShadow = `0 0 0 2px ${t.colors.success}`
     setTimeout(() => {
       el.style.boxShadow = "none"
     }, 1500)
   }
 
-  const filtered = items.filter((item) =>
-    item.text.toLowerCase().includes(search.toLowerCase())
-  )
+  const handleMouseEnter = (item: NavItem, index: number) => {
+    if (cardTimeoutRef.current) {
+      clearTimeout(cardTimeoutRef.current)
+    }
+    setHoveredId(item.id)
+    setHoveredIndex(index)
+
+    // 计算卡片位置
+    const el = itemRefs.current.get(item.id)
+    if (el) {
+      const rect = el.getBoundingClientRect()
+      setCardPos(rect.top + rect.height / 2)
+    }
+
+    cardTimeoutRef.current = setTimeout(() => {
+      setShowCard(true)
+    }, 100)
+  }
+
+  const handleMouseLeave = () => {
+    if (cardTimeoutRef.current) {
+      clearTimeout(cardTimeoutRef.current)
+    }
+    setShowCard(false)
+    cardTimeoutRef.current = setTimeout(() => {
+      setHoveredId(null)
+    }, 100)
+  }
+
+  const hoveredItem = hoveredId ? items.find((i) => i.id === hoveredId) : null
 
   if (!selectorReady) return null
 
   return (
     <>
-      {/* 触发按钮 */}
+      {/* 简洁的时间线指示器 - 只有线条，无背景 */}
       <div
-        className="ec-trigger"
-        onClick={() => setVisible(!visible)}
+        className="ec-timeline"
         style={{
           position: "fixed",
-          right: visible ? t.size.sidebarWidth : "0",
           top: "50%",
+          right: "12px",
           transform: "translateY(-50%)",
-          width: t.size.triggerSize,
-          height: t.size.triggerSize,
-          background: t.colors.primary,
-          borderRadius: `${t.radius.md} 0 0 ${t.radius.md}`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          zIndex: t.zIndex.trigger,
-          boxShadow: `0 2px 8px ${t.colors.shadow}`,
-          transition: `right ${t.transition.slow}`
-        }}>
-        <svg
-          width={t.size.iconLg}
-          height={t.size.iconLg}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke={t.colors.textInverse}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round">
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="12" x2="15" y2="12" />
-          <line x1="3" y1="18" x2="9" y2="18" />
-        </svg>
-      </div>
-
-      {/* 侧边栏 */}
-      <div
-        className="ec-sidebar"
-        style={{
-          position: "fixed",
-          top: "0",
-          right: visible ? "0" : `-${t.size.sidebarWidth}`,
-          width: t.size.sidebarWidth,
-          height: "100vh",
-          background: t.colors.bg,
-          borderLeft: `1px solid ${t.colors.border}`,
-          boxShadow: `-4px 0 24px ${t.colors.shadow}`,
-          zIndex: t.zIndex.sidebar,
           display: "flex",
           flexDirection: "column",
-          transition: `right ${t.transition.slow}`,
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+          alignItems: "flex-end",
+          gap: "20px",
+          zIndex: t.zIndex.sidebar,
+          padding: "8px 0"
         }}>
-        {/* 头部 */}
-        <div
-          style={{
-            padding: `${t.spacing.lg} ${t.spacing.xl}`,
-            borderBottom: `1px solid ${t.colors.border}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            background: t.colors.bgSecondary,
-            flexShrink: 0
-          }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: t.spacing.sm
-            }}>
-            <svg
-              width={t.size.iconMd}
-              height={t.size.iconMd}
-              viewBox="0 0 24 24"
-              fill={t.colors.primary}
-              stroke="none">
-              <path d="M3 3h18v4H3V3zm0 7h12v4H3v-4zm0 7h8v4H3v-4z" />
-            </svg>
-            <span
-              style={{
-                fontSize: t.fontSize.lg,
-                fontWeight: t.fontWeight.semibold,
-                color: t.colors.text
-              }}>
-              提问导航
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: t.fontSize.xs,
-              color: t.colors.textTertiary,
-              background: t.colors.bgTertiary,
-              padding: `2px ${t.spacing.sm}`,
-              borderRadius: t.radius.full
-            }}>
-            {items.length} 条
-          </span>
-        </div>
-
-        {/* 搜索框 */}
-        <div
-          style={{
-            padding: `${t.spacing.md} ${t.spacing.xl}`,
-            borderBottom: `1px solid ${t.colors.borderLight}`,
-            flexShrink: 0
-          }}>
-          <div
-            style={{
-              position: "relative"
-            }}>
-            <svg
-              width={t.size.iconSm}
-              height={t.size.iconSm}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke={t.colors.textTertiary}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{
-                position: "absolute",
-                left: t.spacing.md,
-                top: "50%",
-                transform: "translateY(-50%)"
-              }}>
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              placeholder="搜索提问..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{
-                width: "100%",
-                height: t.size.inputHeight,
-                padding: `0 ${t.spacing.md} 0 ${t.spacing.xxxl}`,
-                border: `1px solid ${t.colors.border}`,
-                borderRadius: t.radius.md,
-                fontSize: t.fontSize.md,
-                color: t.colors.text,
-                background: t.colors.bg,
-                outline: "none",
-                boxSizing: "border-box",
-                transition: `border-color ${t.transition.fast}`
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = t.colors.borderFocus
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = t.colors.border
-              }}
-            />
-          </div>
-        </div>
-
-        {/* 导航列表 */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: `${t.spacing.sm} 0`
-          }}>
-          {filtered.length === 0 ? (
+        {items.map((item) => {
+          const isActive = activeId === item.id
+          const isHovered = hoveredId === item.id
+          return (
             <div
+              key={item.id}
+              ref={(el) => {
+                if (el) itemRefs.current.set(item.id, el)
+              }}
+              onClick={() => scrollTo(item)}
+              onMouseEnter={() => handleMouseEnter(item, item.index)}
+              onMouseLeave={handleMouseLeave}
               style={{
-                padding: `${t.spacing.xxxl} ${t.spacing.xl}`,
-                textAlign: "center",
-                color: t.colors.textTertiary,
-                fontSize: t.fontSize.md
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                cursor: "pointer",
+                padding: "4px 0",
+                transition: `all ${t.transition.fast}`
               }}>
-              {items.length === 0
-                ? "暂未检测到提问内容"
-                : "没有匹配的提问"}
-            </div>
-          ) : (
-            filtered.map((item, i) => (
+              {/* 水平指示线 - 主题色+绿色系，适配亮暗色 */}
               <div
-                key={item.id}
-                onClick={() => scrollTo(item)}
                 style={{
-                  padding: `${t.spacing.md} ${t.spacing.xl}`,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: t.spacing.md,
-                  borderLeft:
-                    activeId === item.id
-                      ? `3px solid ${t.colors.primary}`
-                      : "3px solid transparent",
-                  background:
-                    activeId === item.id
-                      ? t.colors.primaryLight
-                      : "transparent",
+                  width: isActive ? "28px" : isHovered ? "24px" : "20px",
+                  height: isActive ? "6px" : "4px",
+                  borderRadius: "3px",
+                  background: isActive
+                    ? "#22c55e" // 绿色-活跃项
+                    : isHovered
+                      ? "#4ade80" // 浅绿-悬停
+                      : "rgba(148, 163, 184, 0.5)", // 灰色半透明-默认
+                  boxShadow: isActive
+                    ? "0 0 8px rgba(34, 197, 94, 0.6)"
+                    : isHovered
+                      ? "0 0 6px rgba(74, 222, 128, 0.4)"
+                      : "none",
                   transition: `all ${t.transition.fast}`
                 }}
-                onMouseEnter={(e) => {
-                  if (activeId !== item.id) {
-                    e.currentTarget.style.background = t.colors.bgHover
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background =
-                    activeId === item.id
-                      ? t.colors.primaryLight
-                      : "transparent"
-                }}>
-                <span
-                  style={{
-                    fontSize: t.fontSize.xs,
-                    color: t.colors.textTertiary,
-                    fontWeight: t.fontWeight.medium,
-                    flexShrink: 0,
-                    lineHeight: t.lineHeight.normal,
-                    width: "20px",
-                    textAlign: "right"
-                  }}>
-                  {item.index + 1}
-                </span>
-                <span
-                  style={{
-                    fontSize: t.fontSize.md,
-                    color:
-                      activeId === item.id
-                        ? t.colors.primary
-                        : t.colors.text,
-                    lineHeight: t.lineHeight.normal,
-                    wordBreak: "break-word"
-                  }}>
-                  {item.text}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* 底部 */}
-        <div
-          style={{
-            padding: `${t.spacing.md} ${t.spacing.xl}`,
-            borderTop: `1px solid ${t.colors.border}`,
-            background: t.colors.bgSecondary,
-            flexShrink: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between"
-          }}>
-          <span
-            style={{
-              fontSize: t.fontSize.xs,
-              color: t.colors.textTertiary
-            }}>
-            Easy Copilot
-          </span>
-          <div
-            onClick={scanDOM}
-            style={{
-              fontSize: t.fontSize.xs,
-              color: t.colors.primary,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px"
-            }}>
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round">
-              <polyline points="23 4 23 10 17 10" />
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-            </svg>
-            刷新
-          </div>
-        </div>
+              />
+            </div>
+          )
+        })}
       </div>
+
+      {/* 悬停详情卡片 */}
+      {hoveredItem && showCard && (
+        <div
+          className="ec-hover-card"
+          onMouseEnter={() => {
+            if (cardTimeoutRef.current) {
+              clearTimeout(cardTimeoutRef.current)
+            }
+            setShowCard(true)
+          }}
+          onMouseLeave={handleMouseLeave}
+          style={{
+            position: "fixed",
+            right: "44px",
+            top: Math.max(60, Math.min(cardPos - 40, window.innerHeight - 150)),
+            minWidth: "260px",
+            maxWidth: "360px",
+            padding: "14px 18px",
+            background: "rgba(255, 255, 255, 0.95)",
+            borderRadius: "10px",
+            border: "1px solid rgba(148, 163, 184, 0.2)",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)",
+            zIndex: t.zIndex.tooltip,
+            fontFamily:
+              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            animation: `ec-card-fade-in 0.15s ease`,
+            pointerEvents: "auto",
+            backdropFilter: "blur(8px)"
+          }}>
+          {/* 卡片内容 */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "12px"
+            }}>
+            {/* 左侧指示线 */}
+            <div
+              style={{
+                width: "4px",
+                height: "40px",
+                borderRadius: "2px",
+                background:
+                  activeId === hoveredItem.id ? "#22c55e" : "#94a3b8",
+                flexShrink: 0,
+                marginTop: "2px"
+              }}
+            />
+
+            {/* 文本内容 */}
+            <div
+              style={{
+                fontSize: "13px",
+                lineHeight: "1.5",
+                color: "#334155",
+                wordBreak: "break-word",
+                fontWeight: 400
+              }}>
+              {hoveredItem.text}
+            </div>
+          </div>
+
+          {/* 箭头指示 */}
+          <div
+            style={{
+              position: "absolute",
+              right: "-6px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: "0",
+              height: "0",
+              borderTop: "6px solid transparent",
+              borderBottom: "6px solid transparent",
+              borderLeft: "6px solid rgba(255, 255, 255, 0.95)"
+            }}
+          />
+        </div>
+      )}
+
+      {/* 全局动画样式 */}
+      <style>{`
+        @keyframes ec-card-fade-in {
+          from {
+            opacity: 0;
+            transform: translateX(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+      `}</style>
     </>
   )
 }
