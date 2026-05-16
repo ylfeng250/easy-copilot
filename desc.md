@@ -41,6 +41,7 @@ Quickly navigate through your AI conversations with a smart sidebar that indexes
 | Kimi | kimi.com |
 | Qwen | chat.qwen.ai |
 | Tencent Yuanbao | yuanbao.tencent.com |
+| Doubao | doubao.com |
 
 ### How to Use
 
@@ -98,6 +99,7 @@ Quickly navigate through your AI conversations with a smart sidebar that indexes
 | Kimi | kimi.com |
 | 通义千问 | chat.qwen.ai |
 | 腾讯元宝 | yuanbao.tencent.com |
+| 豆包 | doubao.com |
 
 ### 使用方法
 

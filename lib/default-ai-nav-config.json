@@ -34,6 +34,11 @@
         "domain": "chat.qwen.ai",
         "selector": ".chat-user-message",
         "enabled": true
+      },
+      {
+        "domain": "www.doubao.com",
+        "selector": "div[data-message-id].justify-end",
+        "enabled": true
       }
     ]
   }
