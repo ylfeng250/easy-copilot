@@ -116,7 +116,7 @@ Quickly navigate through your AI conversations with a smart sidebar that indexes
 
 ---
 
-**Version:** 0.0.2  
+**Version:** 0.0.4  
 **Author:** ylfeng250  
 **License:** MIT  
 **Repository:** https://github.com/ylfeng250/easy-copilot
