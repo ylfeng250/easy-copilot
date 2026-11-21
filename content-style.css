@@ -1,21 +1,186 @@
-.ec-trigger:hover {
-  filter: brightness(1.1);
-  transform: translateY(-50%) scale(1.05) !important;
+/* Easy Copilot - 页面内提问导航
+   视觉严格对齐 DeepSeek 自带导航：
+   - 右侧指示条 8x2（当前项 12x3），圆角 4px
+   - 悬停展开 16px 圆角白卡，行高 20 / 字号 13，行距 30，文字右对齐
+   - 亮/暗双主题，通过 .ec-root[data-theme] 切换 */
+
+.ec-root {
+  display: contents;
+
+  --ec-font: "quote-cjk-patch", Inter, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  --ec-surface: #ffffff;
+  --ec-border: #ebedf2;
+  --ec-text: #0f1115;
+  --ec-text-2: #61666b;
+  --ec-text-3: #81858c;
+  --ec-accent: #3964fe;
+  --ec-bar: rgba(0, 0, 0, 0.16);
+  --ec-shadow: 0 0 1px rgba(0, 0, 0, 0.2), 0 0 4px rgba(0, 0, 0, 0.02),
+    0 12px 32px rgba(0, 0, 0, 0.08);
 }
 
-.ec-sidebar ::-webkit-scrollbar {
-  width: 4px;
+.ec-root[data-theme="dark"] {
+  --ec-surface: #232325;
+  --ec-border: rgba(255, 255, 255, 0.08);
+  --ec-text: #f9fafb;
+  --ec-text-2: #cfd3d6;
+  --ec-text-3: #9aa0a6;
+  --ec-accent: #4d6bfe;
+  --ec-bar: rgba(255, 255, 255, 0.24);
+  --ec-shadow: 0 0 1px rgba(0, 0, 0, 0.6), 0 0 4px rgba(0, 0, 0, 0.4),
+    0 12px 32px rgba(0, 0, 0, 0.55);
 }
 
-.ec-sidebar ::-webkit-scrollbar-track {
+/* ---------- 右侧指示条 ---------- */
+
+.ec-rail {
+  position: fixed;
+  top: 50%;
+  right: 22px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  border: 0;
   background: transparent;
+  font-family: var(--ec-font);
+  z-index: 2147483642;
+  -webkit-font-smoothing: antialiased;
 }
 
-.ec-sidebar ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 2px;
+.ec-rail-item {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
-.ec-sidebar ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+.ec-rail-bar {
+  display: block;
+  width: 8px;
+  height: 2px;
+  border-radius: 4px;
+  background: var(--ec-bar);
+  transition: background-color 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+
+.ec-rail-item:hover .ec-rail-bar {
+  background: var(--ec-text);
+}
+
+.ec-rail-item.is-active .ec-rail-bar {
+  width: 12px;
+  height: 3px;
+  background: var(--ec-accent);
+}
+
+.ec-rail-item:focus-visible {
+  outline: 2px solid var(--ec-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---------- 悬停展开的问题列表 ---------- */
+
+.ec-tip {
+  position: fixed;
+  right: 16px;
+  width: max-content;
+  min-width: 180px;
+  max-width: 340px;
+  max-height: 56vh;
+  padding: 15px 34px 15px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 16px;
+  background: var(--ec-surface);
+  box-shadow: var(--ec-shadow);
+  font-family: var(--ec-font);
+  z-index: 2147483641;
+  pointer-events: auto;
+  -webkit-font-smoothing: antialiased;
+  scrollbar-width: none;
+  animation: ec-tip-in 0.12s ease-out both;
+}
+
+.ec-tip::-webkit-scrollbar {
+  display: none;
+}
+
+.ec-tip-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 20px;
+  margin: 0 0 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ec-text-3);
+  font-family: var(--ec-font);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  text-align: right;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: color 0.12s ease;
+}
+
+.ec-tip-row:last-child {
+  margin-bottom: 0;
+}
+
+.ec-tip-row > span {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ec-tip-row:hover {
+  color: var(--ec-text);
+}
+
+.ec-tip-row.is-active {
+  color: var(--ec-accent);
+  font-weight: 500;
+}
+
+.ec-tip-row.is-active:hover {
+  color: var(--ec-accent);
+}
+
+@keyframes ec-tip-in {
+  from {
+    opacity: 0;
+    transform: translateX(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ec-rail-bar,
+  .ec-tip,
+  .ec-tip-row {
+    transition: none;
+    animation: none;
+  }
 }

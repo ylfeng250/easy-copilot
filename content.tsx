@@ -1,9 +1,8 @@
 import cssText from "data-text:./content-style.css"
 import type { PlasmoCSConfig, PlasmoGetStyle } from "plasmo"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { getConfigForDomain } from "~lib/storage"
-import { tokens } from "~theme/tokens"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://*/*"]
@@ -22,6 +21,12 @@ interface NavItem {
   index: number
 }
 
+type Theme = "light" | "dark"
+
+const ROW_PITCH = 30 // 行高 20 + 间距 10，和 DeepSeek 原生一致
+const CARD_PAD_Y = 15
+const HIGHLIGHT = "0 0 0 2px rgba(57, 100, 254, 0.5)"
+
 function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): T {
   let timer: ReturnType<typeof setTimeout>
   return ((...args: any[]) => {
@@ -37,19 +42,94 @@ function extractText(el: Element, maxLen = 200): string {
   return raw.length > maxLen ? raw.slice(0, maxLen) + "…" : raw
 }
 
+/** 跟随宿主页面的亮/暗主题（DeepSeek 在 body 上打 light / dark 类名） */
+function useHostTheme(): Theme {
+  const [theme, setTheme] = useState<Theme>("light")
+
+  useEffect(() => {
+    const read = () => {
+      const cls = document.body.classList
+      if (cls.contains("dark")) setTheme("dark")
+      else if (cls.contains("light")) setTheme("light")
+      else
+        setTheme(
+          matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+        )
+    }
+    read()
+
+    const observer = new MutationObserver(read)
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class", "data-theme"]
+    })
+
+    const mq = matchMedia("(prefers-color-scheme: dark)")
+    mq.addEventListener?.("change", read)
+
+    return () => {
+      observer.disconnect()
+      mq.removeEventListener?.("change", read)
+    }
+  }, [])
+
+  return theme
+}
+
+/**
+ * DeepSeek 等站点自带同类「提问导航」，两套指示条会重叠。
+ * 这里只隐藏右侧边缘、成组出现的小指示条本身，不动其它 UI。
+ */
+function suppressNativeRail() {
+  const W = window.innerWidth
+  const found: HTMLElement[] = []
+
+  document.querySelectorAll<HTMLElement>("div").forEach((el) => {
+    if (el.dataset.ecSuppressed) return
+    const r = el.getBoundingClientRect()
+    if (r.width < 10 || r.width > 28 || r.height < 14 || r.height > 28) return
+    // 只处理贴着视口右缘的窄条
+    if (r.right < W - 60 || r.right > W - 4) return
+
+    const inner = el.firstElementChild as HTMLElement | null
+    if (!inner) return
+    const ir = inner.getBoundingClientRect()
+    if (ir.width < 4 || ir.width > 14 || ir.height < 1 || ir.height > 5) return
+    if (parseFloat(getComputedStyle(inner).borderRadius) < 3) return
+
+    found.push(el)
+  })
+
+  // 至少两根竖向排列才算同类导航，避免误伤单个装饰元素
+  if (found.length < 2) return
+
+  // 找到承载这些指示条的窄容器（宽 <= 64、高 >= 100），整块隐藏
+  let rail: HTMLElement | null = found[0].parentElement
+  for (let i = 0; i < 3 && rail; i++) {
+    const cr = rail.getBoundingClientRect()
+    if (cr.width <= 64 && cr.height >= 100) break
+    rail = rail.parentElement
+  }
+
+  const targets = rail ? [rail] : found
+  targets.forEach((el) => {
+    el.dataset.ecSuppressed = "1"
+    el.style.setProperty("display", "none", "important")
+  })
+}
+
 function Sidebar() {
   const [items, setItems] = useState<NavItem[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
-  const [hoveredIndex, setHoveredIndex] = useState<number>(0)
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [selectorReady, setSelectorReady] = useState(false)
   const [showCard, setShowCard] = useState(false)
   const [cardPos, setCardPos] = useState<number>(0)
   const selectorRef = useRef("")
   const observerRef = useRef<MutationObserver | null>(null)
   const cardTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map())
-  const t = tokens
+  const barRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
+  const theme = useHostTheme()
 
   const scanDOM = useCallback(() => {
     if (!selectorRef.current) return
@@ -73,6 +153,8 @@ function Sidebar() {
     }
   }, [])
 
+  const suppress = useMemo(() => debounce(suppressNativeRail, 400), [])
+
   useEffect(() => {
     const init = async () => {
       const domain = window.location.hostname
@@ -87,8 +169,12 @@ function Sidebar() {
 
   useEffect(() => {
     if (!selectorReady) return
-    const debouncedScan = debounce(scanDOM, 300)
+    const debouncedScan = debounce(() => {
+      scanDOM()
+      suppress()
+    }, 300)
     scanDOM()
+    suppress()
 
     observerRef.current = new MutationObserver(debouncedScan)
     observerRef.current.observe(document.body, {
@@ -97,7 +183,40 @@ function Sidebar() {
     })
 
     return () => observerRef.current?.disconnect()
-  }, [selectorReady, scanDOM])
+  }, [selectorReady, scanDOM, suppress])
+
+  // 根据滚动位置实时更新当前所在的提问（和原生导航一致）
+  useEffect(() => {
+    if (!selectorReady || items.length === 0) return
+    let raf = 0
+
+    const compute = () => {
+      raf = 0
+      const probe = window.innerHeight / 2
+      let current = items[0].id
+      for (const item of items) {
+        if (item.element.getBoundingClientRect().top <= probe) current = item.id
+      }
+      setActiveId(current)
+    }
+
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(compute)
+    }
+
+    document.addEventListener("scroll", onScroll, {
+      capture: true,
+      passive: true
+    })
+    window.addEventListener("resize", onScroll)
+    compute()
+
+    return () => {
+      document.removeEventListener("scroll", onScroll, { capture: true })
+      window.removeEventListener("resize", onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [selectorReady, items])
 
   // 监听来自 popup 的消息
   useEffect(() => {
@@ -120,200 +239,101 @@ function Sidebar() {
     setActiveId(item.id)
     item.element.scrollIntoView({ behavior: "smooth", block: "center" })
     const el = item.element as HTMLElement
-    el.style.transition = `box-shadow ${t.transition.normal}`
-    el.style.boxShadow = `0 0 0 2px ${t.colors.success}`
+    el.style.transition = "box-shadow 0.2s ease"
+    el.style.boxShadow = HIGHLIGHT
     setTimeout(() => {
       el.style.boxShadow = "none"
-    }, 1500)
+      el.style.transition = ""
+    }, 1400)
   }
 
-  const handleMouseEnter = (item: NavItem, index: number) => {
-    if (cardTimeoutRef.current) {
-      clearTimeout(cardTimeoutRef.current)
-    }
-    setHoveredId(item.id)
+  /** 从外部进入某一根指示条：卡片展开，并以该行对齐光标 */
+  const handleBarEnter = (item: NavItem, index: number) => {
+    if (cardTimeoutRef.current) clearTimeout(cardTimeoutRef.current)
     setHoveredIndex(index)
 
-    // 计算卡片位置
-    const el = itemRefs.current.get(item.id)
-    if (el) {
-      const rect = el.getBoundingClientRect()
-      setCardPos(rect.top + rect.height / 2)
+    if (!showCard) {
+      const el = barRefs.current.get(item.id)
+      if (el) {
+        const rect = el.getBoundingClientRect()
+        setCardPos(rect.top + rect.height / 2)
+      }
     }
 
-    cardTimeoutRef.current = setTimeout(() => {
-      setShowCard(true)
-    }, 100)
+    cardTimeoutRef.current = setTimeout(() => setShowCard(true), 100)
   }
 
-  const handleMouseLeave = () => {
-    if (cardTimeoutRef.current) {
-      clearTimeout(cardTimeoutRef.current)
-    }
+  const handleLeave = () => {
+    if (cardTimeoutRef.current) clearTimeout(cardTimeoutRef.current)
     setShowCard(false)
-    cardTimeoutRef.current = setTimeout(() => {
-      setHoveredId(null)
-    }, 100)
+    cardTimeoutRef.current = setTimeout(() => setHoveredIndex(null), 120)
   }
 
-  const hoveredItem = hoveredId ? items.find((i) => i.id === hoveredId) : null
+  const openCard = () => {
+    if (cardTimeoutRef.current) clearTimeout(cardTimeoutRef.current)
+    setShowCard(true)
+  }
+
+  const cardTop = (() => {
+    if (hoveredIndex === null) return 0
+    const estHeight = Math.min(items.length * ROW_PITCH + 2 * CARD_PAD_Y, window.innerHeight * 0.56)
+    const desired = cardPos - (CARD_PAD_Y + hoveredIndex * ROW_PITCH + 10)
+    const maxTop = Math.max(16, window.innerHeight - estHeight - 16)
+    return Math.round(Math.min(Math.max(16, desired), maxTop))
+  })()
 
   if (!selectorReady) return null
 
   return (
-    <>
-      {/* 简洁的时间线指示器 - 只有线条，无背景 */}
-      <div
-        className="ec-timeline"
-        style={{
-          position: "fixed",
-          top: "50%",
-          right: "12px",
-          transform: "translateY(-50%)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-end",
-          gap: "20px",
-          zIndex: t.zIndex.sidebar,
-          padding: "8px 0"
-        }}>
-        {items.map((item) => {
+    <div className="ec-root" data-theme={theme}>
+      <nav className="ec-rail" aria-label="提问导航">
+        {items.map((item, i) => {
           const isActive = activeId === item.id
-          const isHovered = hoveredId === item.id
           return (
-            <div
+            <button
               key={item.id}
               ref={(el) => {
-                if (el) itemRefs.current.set(item.id, el)
+                if (el) barRefs.current.set(item.id, el)
               }}
+              type="button"
+              className={`ec-rail-item${isActive ? " is-active" : ""}`}
+              aria-label={`第 ${i + 1} 个提问：${item.text.slice(0, 40)}`}
+              aria-current={isActive ? "true" : undefined}
               onClick={() => scrollTo(item)}
-              onMouseEnter={() => handleMouseEnter(item, item.index)}
-              onMouseLeave={handleMouseLeave}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                cursor: "pointer",
-                padding: "4px 0",
-                transition: `all ${t.transition.fast}`
-              }}>
-              {/* 水平指示线 - 主题色+绿色系，适配亮暗色 */}
-              <div
-                style={{
-                  width: isActive ? "28px" : isHovered ? "24px" : "20px",
-                  height: isActive ? "6px" : "4px",
-                  borderRadius: "3px",
-                  background: isActive
-                    ? "#22c55e" // 绿色-活跃项
-                    : isHovered
-                      ? "#4ade80" // 浅绿-悬停
-                      : "rgba(148, 163, 184, 0.5)", // 灰色半透明-默认
-                  boxShadow: isActive
-                    ? "0 0 8px rgba(34, 197, 94, 0.6)"
-                    : isHovered
-                      ? "0 0 6px rgba(74, 222, 128, 0.4)"
-                      : "none",
-                  transition: `all ${t.transition.fast}`
-                }}
-              />
-            </div>
+              onMouseEnter={() => handleBarEnter(item, i)}
+              onMouseLeave={handleLeave}>
+              <span className="ec-rail-bar" />
+            </button>
           )
         })}
-      </div>
+      </nav>
 
-      {/* 悬停详情卡片 */}
-      {hoveredItem && showCard && (
+      {showCard && items.length > 0 && (
         <div
-          className="ec-hover-card"
-          onMouseEnter={() => {
-            if (cardTimeoutRef.current) {
-              clearTimeout(cardTimeoutRef.current)
-            }
-            setShowCard(true)
-          }}
-          onMouseLeave={handleMouseLeave}
-          style={{
-            position: "fixed",
-            right: "44px",
-            top: Math.max(60, Math.min(cardPos - 40, window.innerHeight - 150)),
-            minWidth: "260px",
-            maxWidth: "360px",
-            padding: "14px 18px",
-            background: "rgba(255, 255, 255, 0.95)",
-            borderRadius: "10px",
-            border: "1px solid rgba(148, 163, 184, 0.2)",
-            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)",
-            zIndex: t.zIndex.tooltip,
-            fontFamily:
-              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            animation: `ec-card-fade-in 0.15s ease`,
-            pointerEvents: "auto",
-            backdropFilter: "blur(8px)"
-          }}>
-          {/* 卡片内容 */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "12px"
-            }}>
-            {/* 左侧指示线 */}
-            <div
-              style={{
-                width: "4px",
-                height: "40px",
-                borderRadius: "2px",
-                background:
-                  activeId === hoveredItem.id ? "#22c55e" : "#94a3b8",
-                flexShrink: 0,
-                marginTop: "2px"
-              }}
-            />
-
-            {/* 文本内容 */}
-            <div
-              style={{
-                fontSize: "13px",
-                lineHeight: "1.5",
-                color: "#334155",
-                wordBreak: "break-word",
-                fontWeight: 400
-              }}>
-              {hoveredItem.text}
-            </div>
-          </div>
-
-          {/* 箭头指示 */}
-          <div
-            style={{
-              position: "absolute",
-              right: "-6px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              width: "0",
-              height: "0",
-              borderTop: "6px solid transparent",
-              borderBottom: "6px solid transparent",
-              borderLeft: "6px solid rgba(255, 255, 255, 0.95)"
-            }}
-          />
+          className="ec-tip"
+          style={{ top: cardTop }}
+          role="listbox"
+          aria-label="提问列表"
+          onMouseEnter={openCard}
+          onMouseLeave={handleLeave}>
+          {items.map((item, i) => {
+            const isActive = activeId === item.id
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={`ec-tip-row${isActive ? " is-active" : ""}`}
+                role="option"
+                aria-selected={isActive}
+                onClick={() => scrollTo(item)}
+                onMouseEnter={() => setHoveredIndex(i)}>
+                <span>{item.text}</span>
+              </button>
+            )
+          })}
         </div>
       )}
-
-      {/* 全局动画样式 */}
-      <style>{`
-        @keyframes ec-card-fade-in {
-          from {
-            opacity: 0;
-            transform: translateX(6px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-      `}</style>
-    </>
+    </div>
   )
 }
 
