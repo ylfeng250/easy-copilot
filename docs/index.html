@@ -1061,6 +1061,11 @@ npm run build</code></pre>
     } else {
       items.forEach(function (el) { el.classList.add("in"); });
     }
+
+    // 兜底：无论是否滚动，2.5s 后全部显示，避免预览/截图场景出现空白
+    setTimeout(function () {
+      items.forEach(function (el) { el.classList.add("in"); });
+    }, 2500);
   })();
 </script>
 
