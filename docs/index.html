@@ -1,391 +1,832 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Easy Copilot - AI 对话导航助手</title>
-  <meta name="description" content="智能索引 AI 对话中的所有提问，一键快速跳转，告别无尽滚动">
-  <meta name="keywords" content="AI, Copilot, Chrome 扩展，对话导航，ChatGPT, Claude, Gemini">
-  <meta name="author" content="ylfeng250">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Easy Copilot · 在 AI 对话里一键跳回任意提问</title>
+<meta name="description" content="Easy Copilot 自动索引 ChatGPT、Claude、Gemini、DeepSeek 等平台里的每一次提问，右侧时间线随时定位，悬停预览全文。开源、免费、数据只存本地。">
+<meta name="keywords" content="Chrome 扩展, AI 对话导航, ChatGPT, Claude, Gemini, DeepSeek, 提问索引">
+<meta name="author" content="ylfeng250">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233964fe'/%3E%3Crect x='8' y='10' width='16' height='2.4' rx='1.2' fill='white'/%3E%3Crect x='8' y='15' width='11' height='2.4' rx='1.2' fill='white'/%3E%3Crect x='8' y='20' width='7' height='2.4' rx='1.2' fill='white'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Easy Copilot · 在 AI 对话里一键跳回任意提问">
+<meta property="og:description" content="自动索引每一次提问，右侧时间线随时定位，悬停预览全文。开源免费，数据只存本地。">
+<meta property="og:image" content="https://ylfeng250.github.io/easy-copilot/assets/icon.png">
+<meta property="og:url" content="https://ylfeng250.github.io/easy-copilot/">
+<meta name="twitter:card" content="summary_large_image">
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem("ec-theme");
+      var dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = saved || (dark ? "dark" : "light");
+      document.documentElement.classList.add("js");
+    } catch (e) {}
+  })();
+</script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #fbfcfe;
+    --surface: #ffffff;
+    --surface-2: #f5f6f8;
+    --border: #e9ecf2;
+    --border-strong: #d8dee9;
+    --text: #0d1017;
+    --text-2: #5b6169;
+    --text-3: #868c95;
+    --accent: #3964fe;
+    --accent-2: #6f8cff;
+    --accent-hover: #2f55e8;
+    --accent-soft: #edf3fe;
+    --accent-border: #c3d2fe;
+    --line: #e9ecf2;
+    --line-strong: rgba(13, 16, 23, 0.18);
+    --dark-tip: #1b1c1f;
+    --mock-card: #ffffff;
+    --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
+    --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 10px 28px rgba(16, 24, 40, 0.06);
+    --shadow-lg: 0 0 1px rgba(16, 24, 40, 0.16), 0 18px 48px rgba(16, 24, 40, 0.12);
+    --ring: rgba(57, 100, 254, 0.28);
+    --radius: 16px;
+    --max: 1140px;
+    color-scheme: light;
+  }
 
-  <!-- Open Graph -->
-  <meta property="og:title" content="Easy Copilot - AI 对话导航助手">
-  <meta property="og:description" content="智能索引 AI 对话中的所有提问，一键快速跳转，告别无尽滚动">
-  <meta property="og:type" content="website">
+  html[data-theme="dark"] {
+    --bg: #101114;
+    --bg-soft: #15161a;
+    --surface: #1b1c20;
+    --surface-2: #24262b;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text: #f4f6f9;
+    --text-2: #b9bfc8;
+    --text-3: #828994;
+    --accent: #5c7cff;
+    --accent-2: #8aa2ff;
+    --accent-hover: #7290ff;
+    --accent-soft: #1e2740;
+    --accent-border: #3a4c7d;
+    --line: rgba(255, 255, 255, 0.1);
+    --line-strong: rgba(255, 255, 255, 0.28);
+    --dark-tip: #34373e;
+    --mock-card: #26282e;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 0 1px rgba(0, 0, 0, 0.7), 0 18px 48px rgba(0, 0, 0, 0.55);
+    --ring: rgba(92, 124, 255, 0.35);
+    color-scheme: dark;
+  }
 
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Easy Copilot - AI 对话导航助手">
-  <meta name="twitter:description" content="智能索引 AI 对话中的所有提问，一键快速跳转，告别无尽滚动">
+  * { box-sizing: border-box; }
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="../assets/icon.png">
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  a { color: inherit; text-decoration: none; }
+  img, svg { display: block; }
 
-  <!-- Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
 
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-          },
-          colors: {
-            primary: {
-              50: '#eff6ff',
-              100: '#dbeafe',
-              200: '#bfdbfe',
-              300: '#93c5fd',
-              400: '#60a5fa',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
-              800: '#1e40af',
-              900: '#1e3a8a',
-            },
-            dark: {
-              900: '#0f0f0f',
-              800: '#1a1a1a',
-              700: '#2a2a2a',
-              600: '#3a3a3a',
-            }
-          },
-          animation: {
-            'float': 'float 6s ease-in-out infinite',
-            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'gradient': 'gradient 8s linear infinite',
-          },
-          keyframes: {
-            float: {
-              '0%, 100%': { transform: 'translateY(0)' },
-              '50%': { transform: 'translateY(-20px)' },
-            },
-            gradient: {
-              '0%, 100%': { backgroundPosition: '0% 50%' },
-              '50%': { backgroundPosition: '100% 50%' },
-            }
-          }
-        }
-      }
-    }
-  </script>
+  /* ---------- 顶部 ---------- */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: saturate(1.6) blur(14px);
+    -webkit-backdrop-filter: saturate(1.6) blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .brand-name { font-size: 15.5px; letter-spacing: -0.01em; }
 
-  <style>
-    .gradient-bg {
-      background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-      background-size: 400% 400%;
-      animation: gradient 15s ease infinite;
-    }
+  .nav-links { display: flex; align-items: center; gap: 2px; }
+  .nav-link {
+    padding: 7px 12px;
+    border-radius: 9px;
+    font-size: 14px;
+    color: var(--text-2);
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .nav-link:hover { background: var(--surface-2); color: var(--text); }
 
-    .glass {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
+  .icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    margin-left: 8px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .icon-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-strong); }
+  .icon-btn .moon { display: none; }
+  html[data-theme="dark"] .icon-btn .sun { display: none; }
+  html[data-theme="dark"] .icon-btn .moon { display: block; }
 
-    .dark .glass {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
+  /* ---------- Hero ---------- */
+  .hero { position: relative; padding: 84px 0 72px; overflow: hidden; }
+  .hero::before {
+    content: "";
+    position: absolute;
+    top: -220px;
+    left: -80px;
+    width: 760px;
+    height: 640px;
+    background: radial-gradient(closest-side, var(--accent-soft), transparent 72%);
+    opacity: 0.9;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(70% 55% at 50% 0%, #000 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(70% 55% at 50% 0%, #000 0%, transparent 70%);
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .hero-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.06fr) minmax(0, 0.94fr);
+    gap: 48px;
+    align-items: center;
+  }
 
-    html {
-      scroll-behavior: smooth;
-    }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px 5px 10px;
+    border: 1px solid var(--accent-border);
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+  .eyebrow .dot {
+    position: relative;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .eyebrow .dot::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    opacity: 0.35;
+    animation: pulse 2.4s ease-out infinite;
+  }
+  @keyframes pulse {
+    0% { transform: scale(0.6); opacity: 0.5; }
+    70% { transform: scale(1.6); opacity: 0; }
+    100% { opacity: 0; }
+  }
 
-    .feature-card:hover {
-      transform: translateY(-8px);
-    }
+  h1 {
+    margin: 20px 0 0;
+    font-size: clamp(38px, 4.6vw, 54px);
+    line-height: 1.14;
+    letter-spacing: -0.035em;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+  h1 .grad {
+    background: linear-gradient(100deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .lede {
+    margin: 20px 0 0;
+    max-width: 33em;
+    color: var(--text-2);
+    font-size: 17px;
+    line-height: 1.75;
+  }
+  .lede strong { color: var(--text); font-weight: 600; }
 
-    .platform-card:hover {
-      transform: scale(1.05);
-    }
-  </style>
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 20px;
+    border-radius: 11px;
+    font-size: 14.5px;
+    font-weight: 550;
+    border: 1px solid transparent;
+    transition: background-color 0.16s ease, border-color 0.16s ease,
+      transform 0.16s ease, box-shadow 0.16s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary {
+    background: linear-gradient(180deg, var(--accent-2), var(--accent));
+    color: #fff;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12), 0 8px 20px var(--ring);
+  }
+  .btn-primary:hover { filter: brightness(1.04); box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12), 0 10px 26px var(--ring); }
+  .btn-ghost { border-color: var(--border-strong); background: var(--surface); color: var(--text); }
+  .btn-ghost:hover { background: var(--surface-2); }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin: 26px 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-3);
+    font-size: 13px;
+  }
+  .meta li { display: flex; align-items: center; gap: 7px; }
+  .meta svg { color: var(--accent); flex: none; }
+
+  /* ---------- 产品示意图 ---------- */
+  .demo-wrap { position: relative; }
+  .demo-glow {
+    position: absolute;
+    inset: 12% 6% -6% 10%;
+    background: radial-gradient(closest-side, var(--accent-soft), transparent 70%);
+    filter: blur(6px);
+    z-index: 0;
+  }
+  .mock {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    aspect-ratio: 10 / 7;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+  .mock-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    flex: none;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .mock-dots { display: flex; gap: 5px; }
+  .mock-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--border-strong); }
+  .mock-title { margin-left: 6px; font-size: 10.5px; color: var(--text-3); }
+  .mock-tools { margin-left: auto; display: flex; gap: 6px; }
+  .mock-tools i { width: 14px; height: 5px; border-radius: 3px; background: var(--line); }
+
+  .mock-body { position: relative; flex: 1 1 auto; display: flex; min-height: 0; }
+
+  .mock-chat {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    padding: 18px 16px;
+  }
+  .bubble {
+    max-width: 88%;
+    padding: 8px 11px;
+    border-radius: 12px;
+    font-size: 10.5px;
+    line-height: 1.6;
+    color: var(--text-2);
+  }
+  .bubble.user {
+    margin-left: auto;
+    background: var(--accent-soft);
+    color: var(--text);
+    border-radius: 12px 12px 4px 12px;
+    max-width: 80%;
+  }
+  .bubble.ai { padding: 0 2px; max-width: 92%; }
+  .bubble.ai .line {
+    display: block;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--line);
+    margin-bottom: 6px;
+  }
+  .bubble.ai .line:last-child { margin-bottom: 0; }
+  .w95 { width: 95%; } .w88 { width: 88%; } .w76 { width: 76%; }
+  .w64 { width: 64%; } .w52 { width: 52%; } .w38 { width: 38%; }
+
+  .mock-composer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: auto;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    font-size: 10px;
+    color: var(--text-3);
+  }
+  .mock-composer i {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.85;
+  }
+
+  .mock-side {
+    position: relative;
+    flex: none;
+    width: 45%;
+    display: flex;
+    align-items: center;
+    padding-right: 16px;
+  }
+  .mock-card {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--mock-card);
+    box-shadow: var(--shadow-lg);
+    z-index: 2;
+  }
+  .mock-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    height: 19px;
+    font-size: 10.5px;
+    color: var(--text-3);
+    white-space: nowrap;
+  }
+  .mock-row + .mock-row { margin-top: 9px; }
+  .mock-row span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .mock-row i { flex: none; width: 7px; height: 2px; border-radius: 2px; background: var(--line-strong); }
+  .mock-row.active { color: var(--accent); font-weight: 550; }
+  .mock-row.active i { width: 11px; height: 3px; background: var(--accent); }
+
+  .mock-rail {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    z-index: 3;
+  }
+  .mock-rail i { width: 8px; height: 2px; border-radius: 2px; background: var(--line-strong); }
+  .mock-rail i.active { width: 12px; height: 3px; background: var(--accent); }
+
+  .mock-tip {
+    position: absolute;
+    right: calc(100% + 12px);
+    top: 58%;
+    width: 196px;
+    padding: 9px 11px;
+    border-radius: 10px;
+    background: var(--dark-tip);
+    color: #f4f6f9;
+    font-size: 10.5px;
+    line-height: 1.65;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+    z-index: 4;
+  }
+  .mock-tip::after {
+    content: "";
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    margin-top: -4.5px;
+    border-radius: 2px;
+    background: var(--dark-tip);
+    transform: rotate(45deg);
+  }
+  html[data-theme="dark"] .mock-tip { border: 1px solid var(--border-strong); }
+
+  /* ---------- 通用 ---------- */
+  section { padding: 96px 0; }
+  #features, #install { background: var(--bg-soft); }
+  section + section { border-top: 1px solid var(--border); }
+  .section-head { max-width: 620px; }
+  .kicker {
+    display: block;
+    margin-bottom: 12px;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  h2 {
+    margin: 0;
+    text-wrap: balance;
+    font-size: clamp(26px, 3vw, 36px);
+    line-height: 1.24;
+    letter-spacing: -0.025em;
+    font-weight: 650;
+  }
+  .section-sub { margin: 14px 0 0; color: var(--text-2); font-size: 15.5px; }
+
+  /* ---------- 功能 ---------- */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .card {
+    position: relative;
+    padding: 24px 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  }
+  .card::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    background: linear-gradient(90deg, transparent, var(--accent-border), transparent);
+    opacity: 0;
+    transition: opacity 0.18s ease;
+  }
+  .card:hover {
+    border-color: var(--accent-border);
+    box-shadow: var(--shadow);
+    transform: translateY(-3px);
+  }
+  .card:hover::after { opacity: 1; }
+  .card-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    margin-bottom: 16px;
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+    border-radius: 11px;
+    background: linear-gradient(150deg, var(--accent-soft), transparent);
+    color: var(--accent);
+  }
+  .card h3 {
+    margin: 0 0 7px;
+    font-size: 15.5px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .card p { margin: 0; color: var(--text-2); font-size: 14px; }
+
+  /* ---------- 平台 ---------- */
+  .platforms {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 40px;
+  }
+  .platform {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 15px;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: var(--surface);
+    transition: border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+  }
+  .platform:hover {
+    border-color: var(--accent-border);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+  .platform-badge {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    flex: none;
+    border-radius: 10px;
+    background: linear-gradient(150deg, var(--accent-soft), var(--surface-2));
+    border: 1px solid var(--border);
+    color: var(--accent);
+    font-size: 11.5px;
+    font-weight: 650;
+    letter-spacing: 0.02em;
+  }
+  .platform-name { font-size: 14px; font-weight: 550; line-height: 1.35; }
+  .platform-domain { font-size: 12px; color: var(--text-3); }
+
+  .platforms-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 20px;
+    color: var(--text-3);
+    font-size: 13.5px;
+  }
+  .platforms-note svg { flex: none; margin-top: 3px; color: var(--accent); }
+
+  /* ---------- 安装 ---------- */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+    counter-reset: step;
+  }
+  .step {
+    position: relative;
+    padding: 24px 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .step-num {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    margin-bottom: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 650;
+    box-shadow: 0 4px 10px var(--ring);
+  }
+  .step h3 { margin: 0 0 8px; font-size: 15.5px; font-weight: 600; }
+  .step p { margin: 0; color: var(--text-2); font-size: 14px; }
+
+  code {
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-2);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    color: var(--text);
+  }
+  pre {
+    margin: 12px 0 0;
+    padding: 13px 14px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: var(--surface-2);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.75;
+    color: var(--text-2);
+  }
+  pre code { padding: 0; border: 0; background: none; font-size: inherit; color: inherit; }
+
+
+  /* ---------- 商店入口 ---------- */
+  .nav-store {
+    margin-left: 6px;
+    border: 1px solid var(--accent-border);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 550;
+  }
+  .nav-store:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .store-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 36px;
+    padding: 18px 20px;
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius);
+    background: linear-gradient(100deg, var(--accent-soft), var(--surface) 72%);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .store-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .store-icon { flex: none; }
+  .store-text { display: flex; flex-direction: column; gap: 3px; flex: 1 1 auto; min-width: 0; }
+  .store-title { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+  .store-meta { font-size: 13px; color: var(--text-2); }
+  .store-btn { flex: none; }
+
+  .or-line {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 36px 0 0;
+    color: var(--text-3);
+    font-size: 13px;
+  }
+  .or-line::before,
+  .or-line::after { content: ""; height: 1px; flex: 1 1 auto; background: var(--border); }
+  .or-line span { flex: none; }
+
+  /* ---------- 页脚 ---------- */
+  footer { padding: 40px 0 56px; border-top: 1px solid var(--border); background: var(--bg-soft); }
+  .footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    color: var(--text-3);
+    font-size: 13px;
+  }
+  .footer-brand { display: flex; align-items: center; gap: 9px; color: var(--text-2); font-weight: 500; }
+  .footer-links { display: flex; flex-wrap: wrap; gap: 18px; }
+  .footer-links a { transition: color 0.15s ease; }
+  .footer-links a:hover { color: var(--text); }
+
+  /* ---------- 入场动画 ---------- */
+  .js .reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.6s cubic-bezier(0.2, 0.6, 0.2, 1),
+      transform 0.6s cubic-bezier(0.2, 0.6, 0.2, 1);
+  }
+  .js .reveal.in { opacity: 1; transform: none; }
+
+  /* ---------- 响应式 ---------- */
+  @media (max-width: 980px) {
+    .hero { padding: 56px 0 48px; }
+    .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+    .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .platforms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .steps { grid-template-columns: 1fr; }
+    section { padding: 72px 0; }
+  }
+  @media (max-width: 680px) {
+    .nav-links .nav-link { display: none; }
+    .features { grid-template-columns: 1fr; }
+    .platforms { grid-template-columns: 1fr; }
+    .mock-card { width: 56%; right: 18px; }
+    .store-card { flex-wrap: wrap; }
+    .store-btn { width: 100%; justify-content: center; }
+    .mock-tip { display: none; }
+    h1 { font-size: clamp(32px, 9vw, 40px); }
+    section { padding: 56px 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; animation: none !important; }
+    .js .reveal { opacity: 1; transform: none; }
+  }
+</style>
 </head>
-<body class="font-sans antialiased">
-  <!-- Navigation -->
-  <nav class="fixed top-0 left-0 right-0 z-50 glass">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <div class="flex items-center space-x-3">
-          <img src="../assets/icon.png" alt="Logo" class="w-8 h-8">
-          <span class="text-xl font-bold">Easy Copilot</span>
-        </div>
-        <div class="hidden md:flex items-center space-x-8">
-          <a href="#features" class="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition">功能</a>
-          <a href="#platforms" class="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition">平台</a>
-          <a href="#install" class="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition">安装</a>
-          <a href="#guide" class="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition">指南</a>
-        </div>
-        <div class="flex items-center space-x-4">
-          <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-            <i class="fas fa-moon dark:hidden"></i>
-            <i class="fas fa-sun hidden dark:block"></i>
-          </button>
-          <a href="https://github.com/ylfeng250/easy-copilot" target="_blank" class="hidden sm:flex items-center space-x-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition">
-            <i class="fab fa-github"></i>
-            <span>GitHub</span>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="./" aria-label="Easy Copilot 首页">
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="#3964fe"/>
+        <rect x="8" y="10" width="16" height="2.4" rx="1.2" fill="#fff"/>
+        <rect x="8" y="15" width="11" height="2.4" rx="1.2" fill="#fff"/>
+        <rect x="8" y="20" width="7" height="2.4" rx="1.2" fill="#fff"/>
+      </svg>
+      <span class="brand-name">Easy Copilot</span>
+    </a>
+    <nav class="nav-links" aria-label="主导航">
+      <a class="nav-link" href="#features">功能</a>
+      <a class="nav-link" href="#platforms">支持平台</a>
+      <a class="nav-link" href="#install">安装</a>
+      <a class="nav-link" href="https://github.com/ylfeng250/easy-copilot" target="_blank" rel="noopener">GitHub</a>
+      <a class="nav-link nav-store" href="https://chromewebstore.google.com/detail/easy-copilot/difiaehpalfomngojndijhfjbdamaobo" target="_blank" rel="noopener">安装扩展</a>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="切换明暗主题">
+        <svg class="sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+        </svg>
+        <svg class="moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+        </svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow"><span class="dot"></span>Chrome 扩展 · 开源免费</span>
+        <h1>AI 对话再长，<br>也能<span class="grad">一键跳回</span>任意提问</h1>
+        <p class="lede">
+          Easy Copilot 自动索引 ChatGPT、Claude、Gemini、DeepSeek 等平台里的<strong>每一次提问</strong>。
+          右侧时间线随时定位，悬停即可预览全文——长对话不用再往上翻半天。
+        </p>
+        <div class="cta">
+          <a class="btn btn-primary" href="https://chromewebstore.google.com/detail/easy-copilot/difiaehpalfomngojndijhfjbdamaobo" target="_blank" rel="noopener">
+            添加到 Chrome
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/ylfeng250/easy-copilot" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.09.68-.22.68-.49 0-.24-.01-.87-.01-1.71-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.3 9.3 0 0 1 2.5-.34c.85 0 1.71.12 2.5.34 1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.48-.01 2.82 0 .27.18.59.69.49A10.02 10.02 0 0 0 22 12.25C22 6.58 17.52 2 12 2z"/>
+            </svg>
+            查看源码
           </a>
         </div>
-      </div>
-    </div>
-  </nav>
-
-  <!-- Hero Section -->
-  <section class="relative min-h-screen flex items-center justify-center overflow-hidden gradient-bg">
-    <div class="absolute inset-0 bg-black/20"></div>
-    <div class="relative z-10 text-center px-4 py-20">
-      <div class="animate-float mb-8">
-        <img src="../assets/icon.png" alt="Easy Copilot Logo" class="w-24 h-24 mx-auto rounded-2xl shadow-2xl">
-      </div>
-      <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-6">
-        Easy Copilot
-      </h1>
-      <p class="text-xl md:text-2xl text-white/90 mb-4 max-w-3xl mx-auto">
-        AI 对话导航助手
-      </p>
-      <p class="text-lg md:text-xl text-white/80 mb-8 max-w-2xl mx-auto">
-        智能索引 AI 对话中的所有提问，一键快速跳转，告别无尽滚动
-      </p>
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="#install" class="px-8 py-4 bg-white text-primary-600 font-semibold rounded-xl hover:bg-gray-100 transition shadow-lg">
-          <i class="fas fa-download mr-2"></i>
-          立即安装
-        </a>
-        <a href="https://github.com/ylfeng250/easy-copilot" target="_blank" class="px-8 py-4 glass text-white font-semibold rounded-xl hover:bg-white/20 transition">
-          <i class="fab fa-github mr-2"></i>
-          查看源码
-        </a>
-      </div>
-      <div class="mt-12 flex items-center justify-center space-x-8 text-white/70">
-        <div class="flex items-center space-x-2">
-          <i class="fas fa-star"></i>
-          <span>完全免费</span>
-        </div>
-        <div class="flex items-center space-x-2">
-          <i class="fas fa-shield-alt"></i>
-          <span>隐私优先</span>
-        </div>
-        <div class="flex items-center space-x-2">
-          <i class="fas fa-code"></i>
-          <span>开源透明</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Animated Background Elements -->
-    <div class="absolute top-1/4 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-pulse-slow"></div>
-    <div class="absolute bottom-1/4 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse-slow" style="animation-delay: 2s;"></div>
-  </section>
-
-  <!-- Features Section -->
-  <section id="features" class="py-20 bg-gray-50 dark:bg-dark-900">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-16">
-        <h2 class="text-4xl font-bold mb-4">
-          <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-purple-600">
-            核心功能
-          </span>
-        </h2>
-        <p class="text-xl text-gray-600 dark:text-gray-400">
-          专为提升 AI 对话效率而设计
-        </p>
+        <ul class="meta">
+          <li>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            已上架 Chrome 商店
+          </li>
+          <li>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            数据只存本地
+          </li>
+          <li>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            选择器可自定义
+          </li>
+        </ul>
       </div>
 
-      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <!-- Feature 1 -->
-        <div class="feature-card bg-white dark:bg-dark-800 p-8 rounded-2xl shadow-lg transition-all duration-300">
-          <div class="w-14 h-14 bg-primary-100 dark:bg-primary-900 rounded-xl flex items-center justify-center mb-6">
-            <i class="fas fa-brain text-2xl text-primary-600 dark:text-primary-400"></i>
+      <div class="demo-wrap">
+        <div class="demo-glow" aria-hidden="true"></div>
+        <div class="mock" role="img" aria-label="示意图：对话页面右侧显示提问导航，悬停某一行会浮出完整问题">
+          <div class="mock-head">
+            <span class="mock-dots"><i></i><i></i><i></i></span>
+            <span class="mock-title">新对话</span>
+            <span class="mock-tools"><i></i><i></i></span>
           </div>
-          <h3 class="text-xl font-semibold mb-3">智能内容提取</h3>
-          <p class="text-gray-600 dark:text-gray-400">
-            自动检测并索引多个 AI 平台上的用户提问，实时 DOM 监听，智能过滤干扰内容
-          </p>
-        </div>
-
-        <!-- Feature 2 -->
-        <div class="feature-card bg-white dark:bg-dark-800 p-8 rounded-2xl shadow-lg transition-all duration-300">
-          <div class="w-14 h-14 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center mb-6">
-            <i class="fas fa-compass text-2xl text-purple-600 dark:text-purple-400"></i>
-          </div>
-          <h3 class="text-xl font-semibold mb-3">侧边栏导航</h3>
-          <p class="text-gray-600 dark:text-gray-400">
-            简洁优雅的侧边栏，一键跳转至任意提问，平滑滚动 + 高亮反馈
-          </p>
-        </div>
-
-        <!-- Feature 3 -->
-        <div class="feature-card bg-white dark:bg-dark-800 p-8 rounded-2xl shadow-lg transition-all duration-300">
-          <div class="w-14 h-14 bg-green-100 dark:bg-green-900 rounded-xl flex items-center justify-center mb-6">
-            <i class="fas fa-search text-2xl text-green-600 dark:text-green-400"></i>
-          </div>
-          <h3 class="text-xl font-semibold mb-3">即时搜索</h3>
-          <p class="text-gray-600 dark:text-gray-400">
-            支持关键词实时过滤，快速定位特定提问，显示当前检测到的提问总数
-          </p>
-        </div>
-
-        <!-- Feature 4 -->
-        <div class="feature-card bg-white dark:bg-dark-800 p-8 rounded-2xl shadow-lg transition-all duration-300">
-          <div class="w-14 h-14 bg-orange-100 dark:bg-orange-900 rounded-xl flex items-center justify-center mb-6">
-            <i class="fas fa-cog text-2xl text-orange-600 dark:text-orange-400"></i>
-          </div>
-          <h3 class="text-xl font-semibold mb-3">灵活配置</h3>
-          <p class="text-gray-600 dark:text-gray-400">
-            支持自定义 CSS 选择器，配置导入/导出，可单独启用/禁用每个平台的规则
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Platforms Section -->
-  <section id="platforms" class="py-20 bg-white dark:bg-dark-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-16">
-        <h2 class="text-4xl font-bold mb-4">
-          <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-purple-600">
-            支持平台
-          </span>
-        </h2>
-        <p class="text-xl text-gray-600 dark:text-gray-400">
-          预置主流 AI 平台支持，开箱即用
-        </p>
-      </div>
-
-      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
-          <div class="text-4xl mb-4">🤖</div>
-          <h3 class="font-semibold text-lg">ChatGPT</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">chatgpt.com</p>
-        </div>
-
-        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
-          <div class="text-4xl mb-4">✨</div>
-          <h3 class="font-semibold text-lg">Claude</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">claude.ai</p>
-        </div>
-
-        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
-          <div class="text-4xl mb-4">🌟</div>
-          <h3 class="font-semibold text-lg">Gemini</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">gemini.google.com</p>
-        </div>
-
-        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
-          <div class="text-4xl mb-4">🐳</div>
-          <h3 class="font-semibold text-lg">DeepSeek</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">chat.deepseek.com</p>
-        </div>
-
-        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
-          <div class="text-4xl mb-4">🐵</div>
-          <h3 class="font-semibold text-lg">Kimi</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">kimi.com</p>
-        </div>
-
-        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
-          <div class="text-4xl mb-4">💬</div>
-          <h3 class="font-semibold text-lg">通义千问</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">chat.qwen.ai</p>
-        </div>
-
-        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
-          <div class="text-4xl mb-4">💎</div>
-          <h3 class="font-semibold text-lg">腾讯元宝</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">yuanbao.tencent.com</p>
-        </div>
-
-        <div class="platform-card bg-gray-50 dark:bg-dark-700 p-6 rounded-xl text-center transition-all duration-300">
-          <div class="text-4xl mb-4">🔧</div>
-          <h3 class="font-semibold text-lg">更多平台</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">支持自定义配置</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Install Section -->
-  <section id="install" class="py-20 bg-gray-50 dark:bg-dark-900">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-16">
-        <h2 class="text-4xl font-bold mb-4">
-          <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-purple-600">
-            安装指南
-          </span>
-        </h2>
-        <p class="text-xl text-gray-600 dark:text-gray-400">
-          从源码构建并加载扩展
-        </p>
-      </div>
-
-      <div class="space-y-6">
-        <!-- Step 1 -->
-        <div class="bg-white dark:bg-dark-800 rounded-2xl p-8 shadow-lg">
-          <div class="flex items-start space-x-4">
-            <div class="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">1</div>
-            <div class="flex-1">
-              <h3 class="text-xl font-semibold mb-3">克隆仓库</h3>
-              <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                <code class="text-green-400 text-sm">
-                  git clone https://github.com/ylfeng250/easy-copilot.git<br>
-                  cd easy-copilot
-                </code>
+          <div class="mock-body">
+            <div class="mock-chat">
+              <div class="bubble ai">
+                <span class="line w88"></span>
+                <span class="line w76"></span>
+                <span class="line w38"></span>
+              </div>
+              <div class="bubble user">怎么把这个按钮改成渐变？</div>
+              <div class="bubble ai">
+                <span class="line w95"></span>
+                <span class="line w64"></span>
+              </div>
+              <div class="bubble user">那暗色模式下怎么保持对比度？</div>
+              <div class="bubble ai">
+                <span class="line w88"></span>
+                <span class="line w52"></span>
+              </div>
+              <div class="mock-composer">
+                <span>给 AI 发送消息</span>
+                <i></i>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Step 2 -->
-        <div class="bg-white dark:bg-dark-800 rounded-2xl p-8 shadow-lg">
-          <div class="flex items-start space-x-4">
-            <div class="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">2</div>
-            <div class="flex-1">
-              <h3 class="text-xl font-semibold mb-3">安装依赖</h3>
-              <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                <code class="text-green-400 text-sm">pnpm install</code>
+            <div class="mock-side">
+              <div class="mock-card">
+                <div class="mock-row"><span>怎么把这个按钮改成渐变？</span><i></i></div>
+                <div class="mock-row"><span>那暗色模式下怎么保持对比度？</span><i></i></div>
+                <div class="mock-row active"><span>最后一个问题：圆角用多少比较合适？</span><i></i></div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 3 -->
-        <div class="bg-white dark:bg-dark-800 rounded-2xl p-8 shadow-lg">
-          <div class="flex items-start space-x-4">
-            <div class="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">3</div>
-            <div class="flex-1">
-              <h3 class="text-xl font-semibold mb-3">构建项目</h3>
-              <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                <code class="text-green-400 text-sm">pnpm build</code>
-              </div>
-              <p class="mt-3 text-gray-600 dark:text-gray-400 text-sm">
-                开发模式下可使用 <code class="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-sm">pnpm dev</code>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 4 -->
-        <div class="bg-white dark:bg-dark-800 rounded-2xl p-8 shadow-lg">
-          <div class="flex items-start space-x-4">
-            <div class="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">4</div>
-            <div class="flex-1">
-              <h3 class="text-xl font-semibold mb-3">加载扩展</h3>
-              <ol class="space-y-2 text-gray-600 dark:text-gray-400">
-                <li>1. 打开 Chrome 浏览器，访问 <code class="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">chrome://extensions/</code></li>
-                <li>2. 开启右上角「开发者模式」</li>
-                <li>3. 点击「加载已解压的扩展程序」</li>
-                <li>4. 选择 <code class="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">build/chrome-mv3-prod</code> 目录</li>
-              </ol>
+              <div class="mock-rail" aria-hidden="true"><i></i><i></i><i class="active"></i></div>
+              <div class="mock-tip" aria-hidden="true">最后一个问题：圆角用多少比较合适？</div>
             </div>
           </div>
         </div>
@@ -393,125 +834,235 @@
     </div>
   </section>
 
-  <!-- Usage Guide Section -->
-  <section id="guide" class="py-20 bg-white dark:bg-dark-800">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-16">
-        <h2 class="text-4xl font-bold mb-4">
-          <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-purple-600">
-            使用指南
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="kicker">Features</span>
+        <h2>把「翻聊天记录」这件事交给它</h2>
+        <p class="section-sub">索引、定位、预览都在页面内完成，不打断你正在进行的对话。</p>
+      </div>
+
+      <div class="features">
+        <article class="card reveal">
+          <span class="card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"/></svg>
           </span>
-        </h2>
-        <p class="text-xl text-gray-600 dark:text-gray-400">
-          快速上手，提升对话效率
-        </p>
-      </div>
+          <h3>自动索引</h3>
+          <p>监听页面变化，新提问一出现就进入列表，不用手动刷新。</p>
+        </article>
 
-      <div class="grid md:grid-cols-2 gap-8">
-        <div class="bg-gray-50 dark:bg-dark-700 rounded-2xl p-8">
-          <div class="w-12 h-12 bg-primary-100 dark:bg-primary-900 rounded-xl flex items-center justify-center mb-4">
-            <i class="fas fa-mouse-pointer text-xl text-primary-600 dark:text-primary-400"></i>
-          </div>
-          <h3 class="text-xl font-semibold mb-3">基本使用</h3>
-          <ol class="space-y-2 text-gray-600 dark:text-gray-400">
-            <li>• 访问支持的 AI 平台（如 ChatGPT、Claude 等）</li>
-            <li>• 页面右侧会出现一个触发按钮</li>
-            <li>• 点击按钮展开侧边栏，查看所有提问</li>
-            <li>• 点击任意提问项，自动滚动到对应位置</li>
-          </ol>
-        </div>
+        <article class="card reveal">
+          <span class="card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+          </span>
+          <h3>一键跳转</h3>
+          <p>点击任意一条，平滑滚动到目标提问，并用高亮环短暂标出位置。</p>
+        </article>
 
-        <div class="bg-gray-50 dark:bg-dark-700 rounded-2xl p-8">
-          <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center mb-4">
-            <i class="fas fa-sliders-h text-xl text-purple-600 dark:text-purple-400"></i>
-          </div>
-          <h3 class="text-xl font-semibold mb-3">配置管理</h3>
-          <ol class="space-y-2 text-gray-600 dark:text-gray-400">
-            <li>• 点击浏览器工具栏中的 Easy Copilot 图标</li>
-            <li>• 为新的 AI 平台添加自定义选择器</li>
-            <li>• 在保存前测试选择器是否有效</li>
-            <li>• 导入/导出配置进行备份或迁移</li>
-          </ol>
-        </div>
+        <article class="card reveal">
+          <span class="card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          </span>
+          <h3>悬停预览</h3>
+          <p>列表里的长问题自动省略，鼠标悬停就能看到完整内容。</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+          </span>
+          <h3>明暗主题</h3>
+          <p>跟随页面背景明暗切换配色，和宿主界面保持一致。</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          </span>
+          <h3>多平台支持</h3>
+          <p>主流 AI 平台开箱可用；遇到改版也能自己填 CSS 选择器。</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          </span>
+          <h3>本地优先</h3>
+          <p>配置只写入 <code>chrome.storage.local</code>，不采集、不上传对话内容。</p>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- CTA Section -->
-  <section class="py-20 gradient-bg">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-      <h2 class="text-4xl font-bold text-white mb-6">准备好提升 AI 对话效率了吗？</h2>
-      <p class="text-xl text-white/80 mb-8">
-        立即安装 Easy Copilot，告别无尽滚动，一键定位任意提问
+  <section id="platforms">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="kicker">Platforms</span>
+        <h2>已适配的平台</h2>
+        <p class="section-sub">每个站点都配了主用与备用选择器，页面改版时会自动尝试兜底。</p>
+      </div>
+
+      <div class="platforms">
+        <div class="platform reveal">
+          <span class="platform-badge">GPT</span>
+          <div><div class="platform-name">ChatGPT</div><div class="platform-domain">chatgpt.com</div></div>
+        </div>
+        <div class="platform reveal">
+          <span class="platform-badge">DS</span>
+          <div><div class="platform-name">DeepSeek</div><div class="platform-domain">chat.deepseek.com</div></div>
+        </div>
+        <div class="platform reveal">
+          <span class="platform-badge">CL</span>
+          <div><div class="platform-name">Claude</div><div class="platform-domain">claude.ai</div></div>
+        </div>
+        <div class="platform reveal">
+          <span class="platform-badge">GM</span>
+          <div><div class="platform-name">Gemini</div><div class="platform-domain">gemini.google.com</div></div>
+        </div>
+        <div class="platform reveal">
+          <span class="platform-badge">KM</span>
+          <div><div class="platform-name">Kimi</div><div class="platform-domain">kimi.com</div></div>
+        </div>
+        <div class="platform reveal">
+          <span class="platform-badge">QW</span>
+          <div><div class="platform-name">通义千问</div><div class="platform-domain">chat.qwen.ai</div></div>
+        </div>
+        <div class="platform reveal">
+          <span class="platform-badge">DB</span>
+          <div><div class="platform-name">豆包</div><div class="platform-domain">doubao.com</div></div>
+        </div>
+        <div class="platform reveal">
+          <span class="platform-badge">YB</span>
+          <div><div class="platform-name">腾讯元宝</div><div class="platform-domain">yuanbao.tencent.com</div></div>
+        </div>
+      </div>
+
+      <p class="platforms-note reveal">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
+        没找到你的平台？在扩展面板里添加域名 + CSS 选择器即可，支持导入导出配置文件。
       </p>
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="#install" class="px-8 py-4 bg-white text-primary-600 font-semibold rounded-xl hover:bg-gray-100 transition shadow-lg">
-          <i class="fas fa-download mr-2"></i>
-          开始安装
-        </a>
-        <a href="https://github.com/ylfeng250/easy-copilot" target="_blank" class="px-8 py-4 glass text-white font-semibold rounded-xl hover:bg-white/20 transition">
-          <i class="fab fa-github mr-2"></i>
-          访问 GitHub
-        </a>
-      </div>
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="py-12 bg-gray-900 text-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex flex-col md:flex-row items-center justify-between">
-        <div class="flex items-center space-x-3 mb-4 md:mb-0">
-          <img src="../assets/icon.png" alt="Logo" class="w-8 h-8">
-          <span class="text-lg font-semibold">Easy Copilot</span>
-        </div>
-        <div class="flex items-center space-x-6">
-          <a href="https://github.com/ylfeng250/easy-copilot" target="_blank" class="hover:text-primary-400 transition">
-            <i class="fab fa-github text-xl"></i>
-          </a>
-          <a href="https://github.com/ylfeng250/easy-copilot/issues" target="_blank" class="hover:text-primary-400 transition">
-            <i class="fas fa-bug text-xl"></i>
-          </a>
-        </div>
+  <section id="install">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="kicker">Get started</span>
+        <h2>两分钟装好</h2>
+        <p class="section-sub">推荐直接从 Chrome 应用商店安装；想改代码，也可以从源码构建。</p>
       </div>
-      <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-        <p>MIT License © 2026 ylfeng250</p>
-        <p class="mt-2 text-sm">Built with ❤️ for better AI conversations</p>
+
+      <a class="store-card reveal" href="https://chromewebstore.google.com/detail/easy-copilot/difiaehpalfomngojndijhfjbdamaobo" target="_blank" rel="noopener">
+        <span class="store-icon">
+          <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
+            <rect width="32" height="32" rx="8" fill="#3964fe"/>
+            <rect x="8" y="10" width="16" height="2.4" rx="1.2" fill="#fff"/>
+            <rect x="8" y="15" width="11" height="2.4" rx="1.2" fill="#fff"/>
+            <rect x="8" y="20" width="7" height="2.4" rx="1.2" fill="#fff"/>
+          </svg>
+        </span>
+        <span class="store-text">
+          <span class="store-title">Easy Copilot</span>
+          <span class="store-meta">Chrome 应用商店 · 免费 · 一键安装，后续自动更新</span>
+        </span>
+        <span class="btn btn-primary store-btn">
+          添加到 Chrome
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 17 17 7M9 7h8v8"/>
+          </svg>
+        </span>
+      </a>
+
+      <p class="or-line"><span>或者从源码安装</span></p>
+
+      <div class="steps">
+        <article class="step reveal">
+          <span class="step-num">1</span>
+          <h3>获取代码</h3>
+          <p>克隆仓库，或下载 Release 里的压缩包。</p>
+          <pre><code>git clone https://github.com/ylfeng250/easy-copilot.git</code></pre>
+        </article>
+
+        <article class="step reveal">
+          <span class="step-num">2</span>
+          <h3>构建产物</h3>
+          <p>安装依赖并打包，产物输出到 <code>build/chrome-mv3-prod</code>。</p>
+          <pre><code>npm install
+npm run build</code></pre>
+        </article>
+
+        <article class="step reveal">
+          <span class="step-num">3</span>
+          <h3>加载扩展</h3>
+          <p>打开 <code>chrome://extensions</code>，开启「开发者模式」→「加载已解压的扩展程序」，选择构建目录即可。</p>
+        </article>
       </div>
     </div>
-  </footer>
+  </section>
+</main>
 
-  <!-- Scripts -->
-  <script>
-    // Theme Toggle
-    const themeToggle = document.getElementById('themeToggle');
-    const html = document.documentElement;
+<footer>
+  <div class="wrap footer-inner">
+    <span class="footer-brand">
+      <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="#3964fe"/>
+        <rect x="8" y="10" width="16" height="2.4" rx="1.2" fill="#fff"/>
+        <rect x="8" y="15" width="11" height="2.4" rx="1.2" fill="#fff"/>
+        <rect x="8" y="20" width="7" height="2.4" rx="1.2" fill="#fff"/>
+      </svg>
+      Easy Copilot · 一个轻量的 AI 对话导航扩展
+    </span>
+    <div class="footer-links">
+      <a href="https://chromewebstore.google.com/detail/easy-copilot/difiaehpalfomngojndijhfjbdamaobo" target="_blank" rel="noopener">Chrome 商店</a>
+      <a href="https://github.com/ylfeng250/easy-copilot" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/ylfeng250/easy-copilot/issues" target="_blank" rel="noopener">反馈问题</a>
+      <a href="https://github.com/ylfeng250/easy-copilot/blob/master/README.md" target="_blank" rel="noopener">文档</a>
+    </div>
+  </div>
+</footer>
 
-    // Check for saved theme preference or default to dark mode
-    const currentTheme = localStorage.getItem('theme') || 'dark';
-    if (currentTheme === 'dark') {
-      html.classList.add('dark');
+<script>
+  (function () {
+    var btn = document.getElementById("theme-toggle");
+    var root = document.documentElement;
+
+    function apply(theme) {
+      root.dataset.theme = theme;
+      try { localStorage.setItem("ec-theme", theme); } catch (e) {}
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", theme === "dark" ? "#101114" : "#ffffff");
     }
 
-    themeToggle.addEventListener('click', () => {
-      html.classList.toggle('dark');
-      const theme = html.classList.contains('dark') ? 'dark' : 'light';
-      localStorage.setItem('theme', theme);
-    });
-
-    // Smooth scroll for navigation links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-          target.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-          });
-        }
+    if (btn) {
+      btn.addEventListener("click", function () {
+        apply(root.dataset.theme === "dark" ? "light" : "dark");
       });
-    });
-  </script>
+    }
+
+    try {
+      var mq = window.matchMedia("(prefers-color-scheme: dark)");
+      mq.addEventListener("change", function (e) {
+        if (!localStorage.getItem("ec-theme")) apply(e.matches ? "dark" : "light");
+      });
+    } catch (e) {}
+
+    // 滚动入场
+    var items = document.querySelectorAll(".reveal");
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in");
+            io.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+      items.forEach(function (el) { io.observe(el); });
+    } else {
+      items.forEach(function (el) { el.classList.add("in"); });
+    }
+  })();
+</script>
+
 </body>
 </html>
