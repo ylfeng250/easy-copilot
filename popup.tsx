@@ -13,6 +13,11 @@ import { tokens } from "~theme/tokens"
 
 const t = tokens
 
+const STORE_URL =
+  "https://chromewebstore.google.com/detail/easy-copilot/difiaehpalfomngojndijhfjbdamaobo"
+const SITE_URL = "https://ylfeng250.github.io/easy-copilot/"
+const GITHUB_URL = "https://github.com/ylfeng250/easy-copilot"
+
 function IndexPopup() {
   const [configs, setConfigs] = useState<SiteConfig[]>([])
   const [currentDomain, setCurrentDomain] = useState("")
@@ -26,6 +31,7 @@ function IndexPopup() {
     type: "success" | "error"
   } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const version = chrome.runtime.getManifest().version
 
   useEffect(() => {
     loadConfigs()
@@ -264,7 +270,7 @@ function IndexPopup() {
             fontSize: t.fontSize.xs,
             color: t.colors.textTertiary
           }}>
-          v0.0.1
+          v{version}
         </span>
       </div>
 
@@ -423,6 +429,7 @@ function IndexPopup() {
       ) : (
         <>
           {/* 配置列表 */}
+          <div style={{ position: "relative" }}>
           <div
             style={{
               maxHeight: "280px",
@@ -553,6 +560,18 @@ function IndexPopup() {
               </div>
             ))}
           </div>
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: "24px",
+              background: `linear-gradient(to bottom, transparent, ${t.colors.bg})`,
+              pointerEvents: "none"
+            }}
+          />
+          </div>
 
           {/* 底部操作 */}
           <div
@@ -591,6 +610,45 @@ function IndexPopup() {
               style={{ display: "none" }}
               onChange={handleFileChange}
             />
+          </div>
+
+          {/* 页脚链接 */}
+          <div
+            style={{
+              padding: `${t.spacing.sm} ${t.spacing.xl}`,
+              borderTop: `1px solid ${t.colors.borderLight}`,
+              background: t.colors.bgSecondary,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: t.spacing.sm,
+              fontSize: t.fontSize.xs,
+              color: t.colors.textTertiary
+            }}>
+            <span>配置只存本地</span>
+            <span style={{ display: "flex", gap: t.spacing.md }}>
+              <a
+                href={STORE_URL}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: t.colors.textLink }}>
+                应用商店
+              </a>
+              <a
+                href={SITE_URL}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: t.colors.textLink }}>
+                官网
+              </a>
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: t.colors.textLink }}>
+                GitHub
+              </a>
+            </span>
           </div>
         </>
       )}

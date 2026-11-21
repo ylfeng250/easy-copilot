@@ -39,7 +39,13 @@
 
 ## 安装
 
-### 从源码构建
+### 方式一：Chrome 应用商店（推荐）
+
+[**→ 添加到 Chrome**](https://chromewebstore.google.com/detail/easy-copilot/difiaehpalfomngojndijhfjbdamaobo)
+
+一键安装，后续自动更新。
+
+### 方式二：从源码构建
 
 ```bash
 # 克隆仓库
@@ -47,13 +53,13 @@ git clone https://github.com/ylfeng250/easy-copilot.git
 cd easy-copilot
 
 # 安装依赖
-pnpm install
+npm install
 
 # 开发模式
-pnpm dev
+npm run dev
 
 # 生产构建
-pnpm build
+npm run build
 ```
 
 ### 加载扩展
@@ -62,6 +68,8 @@ pnpm build
 2. 开启右上角「开发者模式」
 3. 点击「加载已解压的扩展程序」
 4. 选择 `build/chrome-mv3-prod` 目录
+
+> 首页/官网：https://ylfeng250.github.io/easy-copilot/
 
 ## 使用方法
 
