@@ -36,7 +36,7 @@ function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): T {
   }) as unknown as T
 }
 
-function extractText(el: Element, maxLen = 200): string {
+function extractText(el: Element, maxLen = 400): string {
   const clone = el.cloneNode(true) as HTMLElement
   clone
     .querySelectorAll(
@@ -144,15 +144,15 @@ function suppressNativeRail() {
 function Sidebar() {
   const [items, setItems] = useState<NavItem[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [selectorReady, setSelectorReady] = useState(false)
   const [showCard, setShowCard] = useState(false)
-  const [cardPos, setCardPos] = useState<number>(0)
+  const [detailIndex, setDetailIndex] = useState<number | null>(null)
   const selectorRef = useRef("")
   const configRef = useRef<SiteConfig | null>(null)
   const observerRef = useRef<MutationObserver | null>(null)
-  const cardTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const barRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
+  const openTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const detailTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const theme = useHostTheme()
 
   const scanDOM = useCallback(() => {
@@ -287,40 +287,56 @@ function Sidebar() {
     }, 1400)
   }
 
-  /** 从外部进入某一根指示条：卡片展开，并以该行对齐光标 */
-  const handleBarEnter = (item: NavItem, index: number) => {
-    if (cardTimeoutRef.current) clearTimeout(cardTimeoutRef.current)
-    setHoveredIndex(index)
-
-    if (!showCard) {
-      const el = barRefs.current.get(item.id)
-      if (el) {
-        const rect = el.getBoundingClientRect()
-        setCardPos(rect.top + rect.height / 2)
-      }
-    }
-
-    cardTimeoutRef.current = setTimeout(() => setShowCard(true), 100)
+  const scheduleDetail = (index: number) => {
+    if (detailTimeoutRef.current) clearTimeout(detailTimeoutRef.current)
+    detailTimeoutRef.current = setTimeout(() => setDetailIndex(index), 150)
   }
 
-  const handleLeave = () => {
-    if (cardTimeoutRef.current) clearTimeout(cardTimeoutRef.current)
-    setShowCard(false)
-    cardTimeoutRef.current = setTimeout(() => setHoveredIndex(null), 120)
+  const clearDetail = () => {
+    if (detailTimeoutRef.current) clearTimeout(detailTimeoutRef.current)
+    setDetailIndex(null)
   }
 
-  const openCard = () => {
-    if (cardTimeoutRef.current) clearTimeout(cardTimeoutRef.current)
-    setShowCard(true)
+  /** 悬停指示条：展开卡片并高亮对应行，稍后弹出完整内容 */
+  const handleBarEnter = (index: number) => {
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current)
+    if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current)
+    scheduleDetail(index)
+    openTimeoutRef.current = setTimeout(() => setShowCard(true), 80)
   }
 
-  const cardTop = (() => {
-    if (hoveredIndex === null) return 0
-    const estHeight = Math.min(items.length * ROW_PITCH + 2 * CARD_PAD_Y, window.innerHeight * 0.56)
-    const desired = cardPos - (CARD_PAD_Y + hoveredIndex * ROW_PITCH + 10)
-    const maxTop = Math.max(16, window.innerHeight - estHeight - 16)
-    return Math.round(Math.min(Math.max(16, desired), maxTop))
-  })()
+  /** 离开导航区域：延迟关闭，给移入卡片留出时间 */
+  const scheduleClose = () => {
+    if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current)
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current)
+    closeTimeoutRef.current = setTimeout(() => {
+      setShowCard(false)
+      clearDetail()
+    }, 160)
+  }
+
+  const cancelClose = () => {
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current)
+  }
+
+  // 卡片的行高与指示条间距一致（30px），所以卡片居中即可让每一行对齐右侧指示条
+  const cardHeight = Math.min(
+    items.length * ROW_PITCH + 2 * CARD_PAD_Y,
+    window.innerHeight * 0.56
+  )
+  const cardTop = Math.round(
+    Math.max(
+      16,
+      Math.min(
+        window.innerHeight / 2 - cardHeight / 2,
+        window.innerHeight - cardHeight - 16
+      )
+    )
+  )
+  const detailTop =
+    detailIndex === null
+      ? 0
+      : cardTop + CARD_PAD_Y + detailIndex * ROW_PITCH + 10
 
   if (!selectorReady) return null
 
@@ -332,16 +348,13 @@ function Sidebar() {
           return (
             <button
               key={item.id}
-              ref={(el) => {
-                if (el) barRefs.current.set(item.id, el)
-              }}
               type="button"
               className={`ec-rail-item${isActive ? " is-active" : ""}`}
               aria-label={`第 ${i + 1} 个提问：${item.text.slice(0, 40)}`}
               aria-current={isActive ? "true" : undefined}
               onClick={() => scrollTo(item)}
-              onMouseEnter={() => handleBarEnter(item, i)}
-              onMouseLeave={handleLeave}>
+              onMouseEnter={() => handleBarEnter(i)}
+              onMouseLeave={scheduleClose}>
               <span className="ec-rail-bar" />
             </button>
           )
@@ -354,8 +367,11 @@ function Sidebar() {
           style={{ top: cardTop }}
           role="listbox"
           aria-label="提问列表"
-          onMouseEnter={openCard}
-          onMouseLeave={handleLeave}>
+          onMouseEnter={() => {
+            cancelClose()
+            setShowCard(true)
+          }}
+          onMouseLeave={scheduleClose}>
           {items.map((item, i) => {
             const isActive = activeId === item.id
             return (
@@ -366,13 +382,23 @@ function Sidebar() {
                 role="option"
                 aria-selected={isActive}
                 onClick={() => scrollTo(item)}
-                onMouseEnter={() => setHoveredIndex(i)}>
+                onMouseEnter={() => {
+                  scheduleDetail(i)
+                }}
+                onMouseLeave={clearDetail}>
                 <span>{item.text}</span>
               </button>
             )
           })}
         </div>
       )}
+
+      {showCard && detailIndex !== null && items[detailIndex] && (
+        <div className="ec-detail" style={{ top: detailTop }} role="tooltip">
+          {items[detailIndex].text}
+        </div>
+      )}
+
     </div>
   )
 }

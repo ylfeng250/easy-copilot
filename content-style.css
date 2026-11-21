@@ -97,9 +97,8 @@
 .ec-tip {
   position: fixed;
   right: 16px;
-  width: max-content;
-  min-width: 180px;
-  max-width: 340px;
+  box-sizing: border-box;
+  width: 248px;
   max-height: 56vh;
   padding: 15px 34px 15px 24px;
   overflow-y: auto;
@@ -121,6 +120,8 @@
 
 .ec-tip-row {
   display: flex;
+  width: 100%;
+  box-sizing: border-box;
   align-items: center;
   justify-content: flex-end;
   height: 20px;
@@ -150,6 +151,50 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  text-align: right;
+}
+
+/* ---------- 悬停详情浮层 ---------- */
+
+.ec-detail {
+  position: fixed;
+  box-sizing: border-box;
+  right: 276px;
+  max-width: 300px;
+  max-height: 42vh;
+  overflow: hidden;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #1b1b1c;
+  color: #f9fafb;
+  font-family: var(--ec-font);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24), 0 1px 2px rgba(0, 0, 0, 0.2);
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 2147483643;
+  -webkit-font-smoothing: antialiased;
+  animation: ec-detail-in 0.12s ease-out both;
+}
+
+.ec-root[data-theme="dark"] .ec-detail {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #2c2c2e;
+}
+
+@keyframes ec-detail-in {
+  from {
+    opacity: 0;
+    transform: translate(4px, -50%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
 }
 
 .ec-tip-row:hover {
@@ -179,7 +224,8 @@
 @media (prefers-reduced-motion: reduce) {
   .ec-rail-bar,
   .ec-tip,
-  .ec-tip-row {
+  .ec-tip-row,
+  .ec-detail {
     transition: none;
     animation: none;
   }
