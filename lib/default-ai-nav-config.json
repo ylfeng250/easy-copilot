@@ -1,44 +1,53 @@
 {
-    "configs": [
-      {
-        "domain": "chatgpt.com",
-        "selector": "div[data-message-author-role='user']",
-        "enabled": true
-      },
-      {
-        "domain": "gemini.google.com",
-        "selector": "user-query",
-        "enabled": true
-      },
-      {
-        "domain": "claude.ai",
-        "selector": "[data-is-streaming] .font-user-message, div.font-user-message",
-        "enabled": true
-      },
-      {
-        "domain": "chat.deepseek.com",
-        "selector": ".fbb737a4",
-        "enabled": true
-      },
-      {
-        "domain": "yuanbao.tencent.com",
-        "selector": ".agent-chat__conv--human",
-        "enabled": true
-      },
-      {
-        "domain": "www.kimi.com",
-        "selector": ".segment-user",
-        "enabled": true
-      },
-      {
-        "domain": "chat.qwen.ai",
-        "selector": ".chat-user-message",
-        "enabled": true
-      },
-      {
-        "domain": "www.doubao.com",
-        "selector": "div[data-message-id].justify-end",
-        "enabled": true
-      }
-    ]
-  }
+  "version": 2,
+  "configs": [
+    {
+      "domain": "chatgpt.com",
+      "selector": "[data-message-role='user']",
+      "fallbacks": ["div[data-message-author-role='user']"],
+      "enabled": true
+    },
+    {
+      "domain": "gemini.google.com",
+      "selector": "user-query",
+      "fallbacks": [],
+      "enabled": true
+    },
+    {
+      "domain": "claude.ai",
+      "selector": "[data-testid='user-message']",
+      "fallbacks": ["div.font-user-message", "[data-is-streaming] .font-user-message"],
+      "enabled": true
+    },
+    {
+      "domain": "chat.deepseek.com",
+      "selector": ".fbb737a4",
+      "fallbacks": [],
+      "enabled": true
+    },
+    {
+      "domain": "yuanbao.tencent.com",
+      "selector": ".agent-chat__conv--human",
+      "fallbacks": ["[class*='agent-chat__conv--human']"],
+      "enabled": true
+    },
+    {
+      "domain": "kimi.com",
+      "selector": ".segment-user",
+      "fallbacks": ["[class*='segment-user']"],
+      "enabled": true
+    },
+    {
+      "domain": "chat.qwen.ai",
+      "selector": ".chat-user-message",
+      "fallbacks": ["[class*='chat-user-message']", "[class*='user-message']"],
+      "enabled": true
+    },
+    {
+      "domain": "doubao.com",
+      "selector": "div[data-message-id].justify-end",
+      "fallbacks": ["[data-message-id][class*='justify-end']"],
+      "enabled": true
+    }
+  ]
+}

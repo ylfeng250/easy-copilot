@@ -82,15 +82,19 @@ pnpm build
 
 ## 支持平台
 
-| 平台 | 域名 | 选择器 |
-|------|------|--------|
-| ChatGPT | chatgpt.com | `div[data-message-author-role='user']` |
-| Gemini | gemini.google.com | `user-query` |
-| Claude | claude.ai | `[data-is-streaming] .font-user-message, div.font-user-message` |
-| DeepSeek | chat.deepseek.com | `.fbb737a4` |
-| 腾讯元宝 | yuanbao.tencent.com | `.agent-chat__conv--human` |
-| Kimi | www.kimi.com | `.segment-user` |
-| 通义千问 | chat.qwen.ai | `.chat-user-message` |
+| 平台 | 域名 | 主选择器 | 备用选择器 |
+|------|------|----------|------------|
+| ChatGPT | chatgpt.com | `[data-message-role='user']` | `div[data-message-author-role='user']` |
+| Gemini | gemini.google.com | `user-query` | — |
+| Claude | claude.ai | `[data-testid='user-message']` | `div.font-user-message` |
+| DeepSeek | chat.deepseek.com | `.fbb737a4` | — |
+| 腾讯元宝 | yuanbao.tencent.com | `.agent-chat__conv--human` | `[class*='agent-chat__conv--human']` |
+| Kimi | kimi.com | `.segment-user` | `[class*='segment-user']` |
+| 通义千问 | chat.qwen.ai | `.chat-user-message` | `[class*='chat-user-message']`、`[class*='user-message']` |
+| 豆包 | doubao.com | `div[data-message-id].justify-end` | `[data-message-id][class*='justify-end']` |
+
+> 主选择器匹配不到元素时会自动依次尝试备用选择器；站点改版导致选择器失效时，也可以在弹窗里自行修改。
+> 旧版本保存的默认选择器会在升级后自动迁移，用户自定义过的配置不会被覆盖。
 
 ## 开发
 

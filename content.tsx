@@ -2,7 +2,8 @@ import cssText from "data-text:./content-style.css"
 import type { PlasmoCSConfig, PlasmoGetStyle } from "plasmo"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-import { getConfigForDomain } from "~lib/storage"
+import { getConfigForDomain, resolveSelector } from "~lib/storage"
+import type { SiteConfig } from "~lib/storage"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://*/*"]
@@ -37,12 +38,37 @@ function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): T {
 
 function extractText(el: Element, maxLen = 200): string {
   const clone = el.cloneNode(true) as HTMLElement
-  clone.querySelectorAll("pre, code, svg, img").forEach((n) => n.remove())
+  clone
+    .querySelectorAll(
+      'pre, code, svg, img, [aria-hidden="true"], .sr-only, [class*="visually-hidden"], [class*="screen-reader"]'
+    )
+    .forEach((n) => n.remove())
   const raw = (clone.textContent || "").replace(/\s+/g, " ").trim()
   return raw.length > maxLen ? raw.slice(0, maxLen) + "…" : raw
 }
 
-/** 跟随宿主页面的亮/暗主题（DeepSeek 在 body 上打 light / dark 类名） */
+/** 读取页面实际背景亮度，判断亮/暗主题 */
+function readBackgroundTheme(): Theme {
+  let el: HTMLElement | null = document.body
+  while (el) {
+    const bg = getComputedStyle(el).backgroundColor
+    const m = bg.match(
+      /rgba?\(\s*([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\s*\)/
+    )
+    if (m) {
+      const alpha = m[4] === undefined ? 1 : parseFloat(m[4])
+      if (alpha > 0.5) {
+        const lum =
+          (0.2126 * +m[1] + 0.7152 * +m[2] + 0.0722 * +m[3]) / 255
+        return lum > 0.5 ? "light" : "dark"
+      }
+    }
+    el = el.parentElement
+  }
+  return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+}
+
+/** 跟随宿主页面的亮/暗主题（DeepSeek 在 body 上打 light / dark 类名，其它站点看背景色） */
 function useHostTheme(): Theme {
   const [theme, setTheme] = useState<Theme>("light")
 
@@ -51,10 +77,7 @@ function useHostTheme(): Theme {
       const cls = document.body.classList
       if (cls.contains("dark")) setTheme("dark")
       else if (cls.contains("light")) setTheme("light")
-      else
-        setTheme(
-          matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-        )
+      else setTheme(readBackgroundTheme())
     }
     read()
 
@@ -126,6 +149,7 @@ function Sidebar() {
   const [showCard, setShowCard] = useState(false)
   const [cardPos, setCardPos] = useState<number>(0)
   const selectorRef = useRef("")
+  const configRef = useRef<SiteConfig | null>(null)
   const observerRef = useRef<MutationObserver | null>(null)
   const cardTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const barRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
@@ -134,7 +158,17 @@ function Sidebar() {
   const scanDOM = useCallback(() => {
     if (!selectorRef.current) return
     try {
-      const elements = document.querySelectorAll(selectorRef.current)
+      let elements = document.querySelectorAll(selectorRef.current)
+
+      // 选择器失效时（站点改版 / 内容后加载）自动切换到备选选择器
+      if (elements.length === 0 && configRef.current) {
+        const next = resolveSelector(configRef.current)
+        if (next !== selectorRef.current) {
+          selectorRef.current = next
+          elements = document.querySelectorAll(next)
+        }
+      }
+
       const newItems: NavItem[] = []
       elements.forEach((el, i) => {
         const text = extractText(el)
@@ -160,7 +194,8 @@ function Sidebar() {
       const domain = window.location.hostname
       const cfg = await getConfigForDomain(domain)
       if (cfg) {
-        selectorRef.current = cfg.selector
+        configRef.current = cfg
+        selectorRef.current = resolveSelector(cfg)
         setSelectorReady(true)
       }
     }
@@ -222,8 +257,13 @@ function Sidebar() {
   useEffect(() => {
     const handler = (msg: any) => {
       if (msg.type === "config-updated") {
-        selectorRef.current = msg.selector
-        setSelectorReady(true)
+        selectorRef.current = msg.selector || ""
+        getConfigForDomain(window.location.hostname).then((cfg) => {
+          configRef.current = cfg ?? null
+          if (cfg) selectorRef.current = msg.selector || resolveSelector(cfg)
+          setSelectorReady(!!cfg)
+          scanDOM()
+        })
         scanDOM()
       }
       if (msg.type === "test-selector") {
