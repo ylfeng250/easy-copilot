@@ -36,9 +36,14 @@ function IndexPopup() {
   useEffect(() => {
     loadConfigs()
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.url) {
-        const url = new URL(tabs[0].url)
-        setCurrentDomain(url.hostname)
+      // 只在普通网页上读取域名，chrome:// 或扩展页面不算
+      if (tabs[0]?.url?.startsWith("http")) {
+        try {
+          const url = new URL(tabs[0].url)
+          setCurrentDomain(url.hostname)
+        } catch {
+          // 忽略非法 URL
+        }
       }
     })
   }, [])
